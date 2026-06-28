@@ -1,0 +1,302 @@
+@import "tailwindcss";
+
+/*
+  ki-school — дизайн-система.
+  Тема переключается классом .dark на <html> (никогда не по prefers-color-scheme).
+  По умолчанию — светлая тема.
+*/
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─────────────────────────  Светлая тема (по умолчанию)  ───────────────────────── */
+:root {
+  color-scheme: light;
+
+  /* Поверхности */
+  --background: #ffffff;
+  --surface: #f6f6f8;
+  --surface-2: #eeeef2;
+
+  /* Текст */
+  --foreground: #23232b;
+  --muted: #6c6c78;
+  /* Алиас для логотипа/SVG — следует за --muted в обеих темах */
+  --text-muted: var(--muted);
+
+  /* Линии */
+  --border: #e6e6ec;
+
+  /* Фирменный акцент (одинаков в обеих темах) */
+  --accent: #9974f7;
+  --accent-hover: #8159f0;
+  --accent-foreground: #ffffff;
+  --accent-soft: #f0eafe;
+
+  /* Статусы */
+  --success: #2ca06a;
+  --danger: #e0567a;
+
+  /* Фокус-кольцо */
+  --ring: #9974f7;
+}
+
+/* ─────────────────────────────  Тёмная тема  ───────────────────────────────────── */
+.dark {
+  color-scheme: dark;
+
+  --background: #181820;
+  --surface: #20202a;
+  --surface-2: #272732;
+
+  --foreground: #e4e4ec;
+  --muted: #9a9aab;
+
+  --border: #2c2c37;
+
+  --accent: #9974f7;
+  --accent-hover: #a684f8;
+  --accent-foreground: #ffffff;
+  --accent-soft: #241f33;
+
+  --success: #45b985;
+  --danger: #ec6f8f;
+
+  --ring: #9974f7;
+}
+
+/* ──────────────────  Привязка токенов к утилитам Tailwind  ──────────────────────── */
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-fraunces);
+  --font-mono: var(--font-jetbrains-mono);
+}
+
+/* ───────────────────────────────  Базовые стили  ────────────────────────────────── */
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.65;
+}
+
+/* Плавная смена темы (без мерцания на самих переключениях) */
+body,
+.theme-transition,
+.theme-transition * {
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.2s ease;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+code,
+pre,
+kbd {
+  font-family: var(--font-mono), ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* ──────────────────  Крупный анимированный логотип (hero)  ──────────────────────── */
+.hero-logo .axis {
+  stroke: var(--text-muted);
+  stroke-width: 1.2;
+}
+.hero-logo .curve {
+  stroke: var(--accent);
+  stroke-width: 3;
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  animation: draw 1.8s ease forwards 0.3s;
+}
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ──────────────────  Плавное появление элементов  ───────────────────────────────── */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  opacity: 0;
+  animation: fade-up 0.6s ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .hero-logo .curve {
+    stroke-dashoffset: 0;
+  }
+  .animate-fade-up {
+    opacity: 1;
+  }
+}
+
+/* ──────────────────  Типографика markdown-материалов  ───────────────────────────── */
+.markdown {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: var(--foreground);
+}
+.markdown > :first-child {
+  margin-top: 0;
+}
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4 {
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  scroll-margin-top: 5rem;
+}
+.markdown h1 {
+  font-size: 1.8rem;
+  margin: 2rem 0 1rem;
+}
+.markdown h2 {
+  font-size: 1.45rem;
+  margin: 2rem 0 0.85rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--border);
+}
+.markdown h3 {
+  font-size: 1.2rem;
+  margin: 1.6rem 0 0.6rem;
+}
+.markdown p {
+  margin: 0.9rem 0;
+}
+.markdown a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.markdown ul,
+.markdown ol {
+  margin: 0.9rem 0;
+  padding-left: 1.4rem;
+}
+.markdown ul {
+  list-style: disc;
+}
+.markdown ol {
+  list-style: decimal;
+}
+.markdown li {
+  margin: 0.35rem 0;
+}
+.markdown li::marker {
+  color: var(--muted);
+}
+.markdown blockquote {
+  margin: 1.2rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  border-radius: 0 0.5rem 0.5rem 0;
+  color: var(--muted);
+}
+.markdown code {
+  background: var(--surface-2);
+  border-radius: 0.35rem;
+  padding: 0.12em 0.4em;
+  font-size: 0.9em;
+}
+.markdown pre {
+  margin: 1.2rem 0;
+  padding: 1rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  overflow-x: auto;
+}
+.markdown pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 0.9rem;
+}
+.markdown img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 1.2rem 0;
+}
+.markdown hr {
+  margin: 2rem 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+.markdown table {
+  width: 100%;
+  margin: 1.2rem 0;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  display: block;
+  overflow-x: auto;
+}
+.markdown th,
+.markdown td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.markdown th {
+  background: var(--surface);
+  font-weight: 600;
+}
+.markdown .katex-display {
+  margin: 1.3rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.3rem 0;
+}

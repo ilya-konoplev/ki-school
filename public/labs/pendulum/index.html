@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Математический маятник</title>
+    <style>
+      :root {
+        --accent: #9974f7;
+        --bg: #ffffff;
+        --fg: #23232b;
+        --muted: #6c6c78;
+        --surface: #f6f6f8;
+        --border: #e6e6ec;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #181820;
+          --fg: #e4e4ec;
+          --muted: #9a9aab;
+          --surface: #20202a;
+          --border: #2c2c37;
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--fg);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+      }
+      canvas {
+        width: 100%;
+        flex: 1;
+        min-height: 220px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px 20px;
+      }
+      label { font-size: 14px; color: var(--muted); }
+      input[type="range"] { accent-color: var(--accent); vertical-align: middle; }
+      .value { color: var(--fg); font-weight: 600; }
+      .readout {
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .readout b { color: var(--accent); }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <div class="controls">
+      <label
+        >Длина нити L:
+        <input id="len" type="range" min="0.3" max="2.5" step="0.05" value="1" />
+        <span class="value"><span id="lenVal">1.00</span> м</span>
+      </label>
+      <div class="readout">
+        Период <b>T = 2π·√(L/g)</b> ≈ <span id="period">2.01</span> с
+      </div>
+    </div>
+    <script>
+      const canvas = document.getElementById("c");
+      const ctx = canvas.getContext("2d");
+      const lenInput = document.getElementById("len");
+      const lenVal = document.getElementById("lenVal");
+      const periodEl = document.getElementById("period");
+      const g = 9.81;
+      let L = parseFloat(lenInput.value);
+      const theta0 = 0.5; // начальный угол, рад
+      let start = performance.now();
+
+      function accentColor() {
+        return getComputedStyle(document.documentElement)
+          .getPropertyValue("--accent")
+          .trim() || "#9974f7";
+      }
+
+      function resize() {
+        const r = canvas.getBoundingClientRect();
+        canvas.width = r.width * devicePixelRatio;
+        canvas.height = r.height * devicePixelRatio;
+        ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+      }
+      window.addEventListener("resize", resize);
+
+      function update() {
+        L = parseFloat(lenInput.value);
+        lenVal.textContent = L.toFixed(2);
+        const T = 2 * Math.PI * Math.sqrt(L / g);
+        periodEl.textContent = T.toFixed(2);
+      }
+      lenInput.addEventListener("input", update);
+
+      function draw(now) {
+        const w = canvas.getBoundingClientRect().width;
+        const h = canvas.getBoundingClientRect().height;
+        ctx.clearRect(0, 0, w, h);
+
+        const T = 2 * Math.PI * Math.sqrt(L / g);
+        const t = (now - start) / 1000;
+        const theta = theta0 * Math.cos((2 * Math.PI * t) / T);
+
+        const pivotX = w / 2;
+        const pivotY = 24;
+        const lengthPx = Math.min(h - 80, 60 + L * 110);
+        const bobX = pivotX + lengthPx * Math.sin(theta);
+        const bobY = pivotY + lengthPx * Math.cos(theta);
+
+        ctx.strokeStyle = "rgba(128,128,140,0.6)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(pivotX, pivotY);
+        ctx.lineTo(bobX, bobY);
+        ctx.stroke();
+
+        const accent = accentColor();
+        ctx.fillStyle = accent;
+        ctx.beginPath();
+        ctx.arc(bobX, bobY, 16, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(128,128,140,0.9)";
+        ctx.beginPath();
+        ctx.arc(pivotX, pivotY, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        requestAnimationFrame(draw);
+      }
+
+      resize();
+      update();
+      requestAnimationFrame(draw);
+    </script>
+  </body>
+</html>
