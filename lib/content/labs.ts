@@ -21,6 +21,13 @@ export const labs: Lab[] = [
     src: "/labs/pendulum/index.html",
     topicSlug: "mechanical-oscillations",
   },
+  {
+  slug: "atom",
+  title: "Модель атома Резерфорда",
+  description: "Модель атома, разработанная Резерфордом в 1911 году. Так же известна, как планетарная модель",
+  src: "/labs/atom/index.html",
+  topicSlug: "rutherford-atom",
+},
 ];
 
 export function getLab(slug: string): Lab | undefined {
