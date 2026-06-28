@@ -52,7 +52,7 @@ export default async function ContactsPage() {
             Написать сообщение
           </h2>
           <p className="mt-1.5 text-sm text-muted">
-            Заполните форму — я свяжусь с вами удобным способом.
+            Заполните форму – я свяжусь с вами удобным способом.
           </p>
           <div className="mt-6">
             <ContactForm />

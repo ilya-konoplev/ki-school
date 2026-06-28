@@ -1,4 +1,4 @@
-# Supabase — база данных ki-school
+# Supabase – база данных ki-school
 
 ## 1. Создать проект
 
@@ -42,7 +42,7 @@ node --env-file=.env.local scripts/create-user.mjs \
 
 ## Как устроен вход
 
-Вход — по **логину**, не по email. Supabase Auth требует email, поэтому логин
+Вход – по **логину**, не по email. Supabase Auth требует email, поэтому логин
 внутри превращается в технический адрес `логин@parents.ki-school.local`
 (см. `lib/auth.ts`). Родитель вводит только логин и пароль. Сессия хранится в
 защищённых cookie и продлевается автоматически (`middleware.ts`), поэтому

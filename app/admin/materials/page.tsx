@@ -13,7 +13,7 @@ export default function AdminMaterialsPage() {
         </h1>
         <p className="mt-2 max-w-3xl text-sm text-muted">
           Конспекты тем и лабораторные добавляются файлами в проект (это надёжнее
-          и проще). Подробные шаги — в гайде; ниже краткая памятка и имена
+          и проще). Подробные шаги – в гайде; ниже краткая памятка и имена
           файлов.
         </p>
       </div>
@@ -34,7 +34,7 @@ export default function AdminMaterialsPage() {
             Имя файла = slug темы из списка ниже, например{" "}
             <code>ohm-law.md</code>.
           </li>
-          <li>Отправьте изменения — после деплоя тема появится на сайте.</li>
+          <li>Отправьте изменения – после деплоя тема появится на сайте.</li>
         </ol>
         <h2 className="mt-5 text-base font-semibold tracking-tight">
           Как добавить лабораторную

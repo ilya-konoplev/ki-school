@@ -17,7 +17,7 @@ export default async function AdminServicesPage() {
           Услуги
         </h1>
         <p className="mt-2 text-sm text-muted">
-          Список услуг на странице «Услуги» и в превью на главной. Пункты — по
+          Список услуг на странице «Услуги» и в превью на главной. Пункты – по
           одному на строку.
         </p>
       </div>

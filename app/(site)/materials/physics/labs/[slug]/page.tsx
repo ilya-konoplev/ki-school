@@ -15,7 +15,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const lab = getLab(slug);
-  return { title: lab ? `${lab.title} — лабораторная работа` : "Лаборатория" };
+  return { title: lab ? `${lab.title} – лабораторная работа` : "Лаборатория" };
 }
 
 export default async function LabViewerPage({

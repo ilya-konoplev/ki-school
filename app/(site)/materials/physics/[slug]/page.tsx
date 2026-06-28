@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TopicArticle } from "@/components/materials/TopicArticle";
+import { labs } from "@/lib/content/labs";
 import { flatTopics, getTopic, subjects } from "@/lib/content/materials";
 import { readTopicMarkdown } from "@/lib/markdown";
 
@@ -15,7 +16,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const found = getTopic("physics", slug);
-  return { title: found ? `${found.topic.title} — Физика` : "Тема" };
+  return { title: found ? `${found.topic.title} – Физика` : "Тема" };
 }
 
 export default async function PhysicsTopicPage({
@@ -28,6 +29,7 @@ export default async function PhysicsTopicPage({
   if (!found) notFound();
 
   const md = await readTopicMarkdown("physics", slug);
+  const relatedLabs = labs.filter((lab) => lab.topicSlug === slug);
 
   return (
     <TopicArticle
@@ -36,6 +38,7 @@ export default async function PhysicsTopicPage({
       prev={found.prev}
       next={found.next}
       content={md?.content ?? null}
+      labs={relatedLabs}
     />
   );
 }

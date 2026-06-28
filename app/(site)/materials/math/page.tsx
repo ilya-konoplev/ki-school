@@ -4,7 +4,7 @@ import { Container } from "@/components/ui/Container";
 import { subjects } from "@/lib/content/materials";
 
 export const metadata: Metadata = {
-  title: "Математика — материалы",
+  title: "Математика – материалы",
   description: subjects.math.description,
 };
 

@@ -26,7 +26,7 @@ type ButtonProps = {
   variant?: Variant;
   size?: Size;
   className?: string;
-  /** Если задан — кнопка рендерится как ссылка */
+  /** Если задан – кнопка рендерится как ссылка */
   href?: string;
   type?: "button" | "submit" | "reset";
   onClick?: () => void;

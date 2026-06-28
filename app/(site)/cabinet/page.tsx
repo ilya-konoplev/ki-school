@@ -27,7 +27,7 @@ export default async function CabinetPage({
           <p className="text-lg font-medium">Пока нет привязанных учеников</p>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted">
             Как только репетитор добавит ученика к вашему профилю, здесь появится
-            его прогресс. Если это ошибка — напишите мне.
+            его прогресс. Если это ошибка – напишите мне.
           </p>
         </div>
       </Container>

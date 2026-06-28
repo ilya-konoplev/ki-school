@@ -23,7 +23,7 @@ export async function createClient() {
               cookieStore.set(name, value, options),
             );
           } catch {
-            // Вызов из Server Component — запись cookie выполнит middleware.
+            // Вызов из Server Component – запись cookie выполнит middleware.
           }
         },
       },

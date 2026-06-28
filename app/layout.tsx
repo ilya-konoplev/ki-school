@@ -4,7 +4,7 @@ import "./globals.css";
 import { ThemeScript } from "@/components/theme/ThemeScript";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
-// Основной шрифт интерфейса и текста — отличная кириллица, читаемость в духе Obsidian.
+// Основной шрифт интерфейса и текста – отличная кириллица, читаемость в духе Obsidian.
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin", "cyrillic"],
@@ -18,7 +18,7 @@ const fraunces = Fraunces({
   display: "swap",
 });
 
-// Моноширинный — код, формулы, технические подписи.
+// Моноширинный – код, формулы, технические подписи.
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin", "cyrillic"],
@@ -27,7 +27,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "ki-school — репетитор по физике и математике",
+    default: "ki-school – репетитор по физике и математике",
     template: "%s · ki-school",
   },
   description:

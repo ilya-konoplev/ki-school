@@ -7,7 +7,7 @@ import "katex/dist/katex.min.css";
 /**
  * Рендер markdown-материала: поддержка GitHub-разметки (таблицы, списки),
  * формул LaTeX ($...$ и $$...$$) через KaTeX, изображений и кода.
- * Стили — класс .markdown в globals.css.
+ * Стили – класс .markdown в globals.css.
  */
 export function Markdown({ children }: { children: string }) {
   return (

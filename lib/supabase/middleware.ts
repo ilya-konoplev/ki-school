@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Обновляет сессию Supabase на каждом запросе (продлевает токены),
- * чтобы родитель не выходил из системы. Если Supabase не подключён —
+ * чтобы родитель не выходил из системы. Если Supabase не подключён –
  * просто пропускает запрос дальше.
  */
 export async function updateSession(request: NextRequest) {

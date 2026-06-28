@@ -28,10 +28,10 @@ export const defaultTexts: SiteTexts = {
   servicesIntro:
     "Готовлю к ОГЭ по физике и математике и помогаю подтянуть школьную оценку. Формат и интенсивность подбираем под цель ученика.",
   contactsIntro:
-    "Свяжитесь со мной через Telegram или WhatsApp — отвечаю быстро. Можно также позвонить или заполнить форму ниже.",
+    "Свяжитесь со мной через Telegram, WhatsApp или Max – отвечаю быстро. Можно также позвонить или заполнить форму ниже.",
   guestInviteTitle: "Хотите видеть прогресс ребёнка?",
   guestInviteText:
-    "Войдите по логину и паролю, которые выдал репетитор, — и следите за пройденными темами, ближайшим занятием и комментариями.",
+    "Войдите по логину и паролю, которые выдал репетитор, – и следите за пройденными темами, ближайшим занятием и комментариями.",
 };
 
 /** Подписи полей для формы в админке. */
@@ -51,13 +51,13 @@ export const textFields: {
   { key: "homeDescription", label: "Описание под слоганом (главная)", multiline: true },
   { key: "guestInviteTitle", label: "Заголовок блока входа (для гостей)" },
   { key: "guestInviteText", label: "Текст блока входа (для гостей)", multiline: true },
-  { key: "aboutLead", label: "«Обо мне» — вступление", multiline: true },
+  { key: "aboutLead", label: "«Обо мне» – вступление", multiline: true },
   {
     key: "aboutParagraphs",
-    label: "«Обо мне» — абзацы",
+    label: "«Обо мне» – абзацы",
     multiline: true,
-    hint: "Каждый абзац — с новой строки (через пустую строку).",
+    hint: "Каждый абзац – с новой строки (через пустую строку).",
   },
-  { key: "servicesIntro", label: "«Услуги» — вступление", multiline: true },
-  { key: "contactsIntro", label: "«Контакты» — вступление", multiline: true },
+  { key: "servicesIntro", label: "«Услуги» – вступление", multiline: true },
+  { key: "contactsIntro", label: "«Контакты» – вступление", multiline: true },
 ];

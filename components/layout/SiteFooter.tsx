@@ -66,7 +66,7 @@ export function SiteFooter() {
       <div className="border-t border-border">
         <Container className="flex flex-col items-center justify-between gap-2 py-5 text-xs text-muted sm:flex-row">
           <span>
-            © {year} {site.name} · konoplev ilya — school
+            © {year} {site.name} · konoplev ilya – school
           </span>
           <Link href="/login" className="transition-colors hover:text-foreground">
             Вход для родителей

@@ -53,14 +53,14 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   };
 }
 
-/** Требует вошедшего родителя; иначе — на страницу входа. */
+/** Требует вошедшего родителя; иначе – на страницу входа. */
 export async function requireParent(): Promise<SessionUser> {
   const user = await getSessionUser();
   if (!user) redirect("/login");
   return user;
 }
 
-/** Требует вошедшего администратора; иначе — на страницу входа. */
+/** Требует вошедшего администратора; иначе – на страницу входа. */
 export async function requireAdmin(): Promise<SessionUser> {
   const user = await getSessionUser();
   if (!user || !user.isAdmin) redirect("/login");

@@ -20,7 +20,7 @@ export default async function ReviewsPage() {
             Отзывы
           </h1>
           <p className="mt-4 text-lg text-muted">
-            Что говорят ученики и их родители. Больше отзывов — на моём профиле
+            Что говорят ученики и их родители. Больше отзывов – на моём профиле
             profi.ru.
           </p>
         </div>

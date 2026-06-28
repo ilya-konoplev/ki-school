@@ -98,7 +98,7 @@ export default async function StudentPage({
         <h2 className="text-lg font-semibold tracking-tight">Занятия</h2>
         <p className="mt-1 text-sm text-muted">
           Ближайшее будущее занятие родитель видит как «Следующее занятие».
-          Время — по Москве.
+          Время – по Москве.
         </p>
 
         <form

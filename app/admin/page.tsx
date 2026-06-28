@@ -36,7 +36,7 @@ export default async function AdminDashboard() {
         <SectionCard
           href="/admin/services"
           title="Услуги"
-          text="Список услуг на сайте — добавляйте, редактируйте, удаляйте."
+          text="Список услуг на сайте – добавляйте, редактируйте, удаляйте."
         />
         <SectionCard
           href="/admin/reviews"

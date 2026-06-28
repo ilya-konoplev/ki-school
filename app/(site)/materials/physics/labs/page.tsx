@@ -5,7 +5,7 @@ import { Container } from "@/components/ui/Container";
 import { labs } from "@/lib/content/labs";
 
 export const metadata: Metadata = {
-  title: "Виртуальные лабораторные работы — Физика",
+  title: "Виртуальные лабораторные работы – Физика",
   description:
     "Интерактивные лабораторные работы по физике, которые открываются прямо на сайте.",
 };
@@ -18,7 +18,7 @@ export default function LabsPage() {
           Физика
         </h1>
         <p className="mt-4 text-lg text-muted">
-          Интерактивные лабораторные работы — модели физических явлений, с
+          Интерактивные лабораторные работы – модели физических явлений, с
           которыми можно поэкспериментировать прямо в браузере.
         </p>
       </div>

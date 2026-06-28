@@ -1,5 +1,5 @@
 -- ────────────────────────────────────────────────────────────────────────────
--- ki-school — начальная схема базы данных
+-- ki-school – начальная схема базы данных
 -- Применяется в Supabase: SQL Editor → New query → вставить → Run
 -- (или через Supabase CLI: supabase db push)
 -- ────────────────────────────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ create table public.students (
   created_at timestamptz not null default now()
 );
 
--- Прогресс по темам. Каталог тем — в коде (lib/content/materials.ts),
+-- Прогресс по темам. Каталог тем – в коде (lib/content/materials.ts),
 -- здесь хранится ссылка на тему по предмету и slug.
 create table public.progress (
   id uuid primary key default gen_random_uuid(),
@@ -127,13 +127,13 @@ alter table public.comments enable row level security;
 alter table public.contact_requests enable row level security;
 alter table public.site_settings enable row level security;
 
--- profiles: пользователь видит свой профиль; админ — все; пишет только админ.
+-- profiles: пользователь видит свой профиль; админ – все; пишет только админ.
 create policy "profiles_read" on public.profiles
   for select using (id = auth.uid() or public.is_admin());
 create policy "profiles_admin_write" on public.profiles
   for all using (public.is_admin()) with check (public.is_admin());
 
--- students: родитель видит своих детей; админ — всё.
+-- students: родитель видит своих детей; админ – всё.
 create policy "students_read" on public.students
   for select using (parent_id = auth.uid() or public.is_admin());
 create policy "students_admin_write" on public.students
@@ -182,7 +182,7 @@ create policy "contact_admin_update" on public.contact_requests
 create policy "contact_admin_delete" on public.contact_requests
   for delete using (public.is_admin());
 
--- site_settings: читать может любой (публичный счётчик); менять — админ.
+-- site_settings: читать может любой (публичный счётчик); менять – админ.
 create policy "settings_public_read" on public.site_settings
   for select using (true);
 create policy "settings_admin_write" on public.site_settings

@@ -7,7 +7,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   const { theme, toggleTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  // До монтирования не знаем реальную тему (её мог выставить ThemeScript) —
+  // До монтирования не знаем реальную тему (её мог выставить ThemeScript) –
   // рисуем нейтральную кнопку, чтобы не было рассинхрона гидрации.
   useEffect(() => setMounted(true), []);
 

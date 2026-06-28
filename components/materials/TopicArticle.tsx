@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Markdown } from "@/components/markdown/Markdown";
 import { Container } from "@/components/ui/Container";
+import type { Lab } from "@/lib/content/labs";
 import type { Subject, Topic } from "@/lib/content/materials";
 
 export function TopicArticle({
@@ -9,12 +10,14 @@ export function TopicArticle({
   prev,
   next,
   content,
+  labs = [],
 }: {
   subject: Subject;
   topic: Topic;
   prev?: Topic;
   next?: Topic;
   content: string | null;
+  labs?: Lab[];
 }) {
   return (
     <Container className="py-12 sm:py-16">
@@ -51,6 +54,27 @@ export function TopicArticle({
           )}
         </div>
 
+        {labs.length > 0 && (
+          <div className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft p-5">
+            <p className="text-sm font-semibold text-accent">
+              Виртуальная лабораторная работа
+            </p>
+            <ul className="mt-3 space-y-2">
+              {labs.map((lab) => (
+                <li key={lab.slug}>
+                  <Link
+                    href={`/materials/physics/labs/${lab.slug}`}
+                    className="inline-flex items-center gap-2 font-medium hover:text-accent"
+                  >
+                    <FlaskIcon />
+                    {lab.title} →
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <nav className="mt-12 grid gap-3 border-t border-border pt-6 sm:grid-cols-2">
           {prev ? (
             <Link
@@ -77,5 +101,25 @@ export function TopicArticle({
         </nav>
       </article>
     </Container>
+  );
+}
+
+function FlaskIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-accent"
+      aria-hidden="true"
+    >
+      <path d="M9 3h6M10 3v6L5 18a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3" />
+      <path d="M7.5 14h9" />
+    </svg>
   );
 }

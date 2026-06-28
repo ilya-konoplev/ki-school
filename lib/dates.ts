@@ -33,7 +33,7 @@ export function formatDate(dateStr: string): string {
   }).format(new Date(dateStr));
 }
 
-/** «5 июня, 17:30» — для даты и времени занятия (МСК). */
+/** «5 июня, 17:30» – для даты и времени занятия (МСК). */
 export function formatDateTime(dateStr: string): string {
   return new Intl.DateTimeFormat("ru-RU", {
     day: "numeric",

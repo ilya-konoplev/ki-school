@@ -46,7 +46,7 @@ export default async function ServicesPage() {
           Не уверены, что подойдёт?
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-muted">
-          Напишите мне — обсудим ситуацию и подберём формат занятий под вашу
+          Напишите мне – обсудим ситуацию и подберём формат занятий под вашу
           цель.
         </p>
         <div className="mt-6 flex justify-center">

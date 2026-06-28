@@ -21,7 +21,7 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // Стартуем со «светлой» — совпадает с дефолтом ThemeScript,
+  // Стартуем со «светлой» – совпадает с дефолтом ThemeScript,
   // затем синхронизируемся с реальным состоянием DOM после монтирования.
   const [theme, setThemeState] = useState<Theme>("light");
 
@@ -36,7 +36,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
-      /* localStorage недоступен — не критично */
+      /* localStorage недоступен – не критично */
     }
     setThemeState(next);
   }, []);

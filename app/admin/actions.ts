@@ -16,6 +16,13 @@ export async function createParent(
 ): Promise<CreateParentState> {
   await requireAdmin();
 
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return {
+      error:
+        "Не задан служебный ключ Supabase (SUPABASE_SERVICE_ROLE_KEY). Добавьте его в переменные окружения на Vercel и сделайте Redeploy.",
+    };
+  }
+
   const username = String(formData.get("username") ?? "")
     .trim()
     .toLowerCase();
@@ -155,7 +162,7 @@ export async function addLesson(formData: FormData) {
   const note = String(formData.get("note") ?? "").trim();
   if (!studentId || !local) return;
 
-  // Время вводится по Москве — фиксируем смещение +03:00.
+  // Время вводится по Москве – фиксируем смещение +03:00.
   const isoMoscow = `${local}:00+03:00`;
 
   const supabase = await createClient();

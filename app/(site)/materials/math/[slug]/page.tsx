@@ -15,7 +15,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const found = getTopic("math", slug);
-  return { title: found ? `${found.topic.title} — Математика` : "Тема" };
+  return { title: found ? `${found.topic.title} – Математика` : "Тема" };
 }
 
 export default async function MathTopicPage({
