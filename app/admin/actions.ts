@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin, usernameToEmail } from "@/lib/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, describeSupabaseKey } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 // ── Родители ────────────────────────────────────────────────────────────────
@@ -16,10 +16,17 @@ export async function createParent(
 ): Promise<CreateParentState> {
   await requireAdmin();
 
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  const keyKind = describeSupabaseKey(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  if (keyKind === "missing") {
     return {
       error:
-        "Не задан служебный ключ Supabase (SUPABASE_SERVICE_ROLE_KEY). Добавьте его в переменные окружения на Vercel и сделайте Redeploy.",
+        "Не задан служебный ключ Supabase (SUPABASE_SERVICE_ROLE_KEY). Добавьте его в переменные окружения на Vercel (для Production) и сделайте Redeploy.",
+    };
+  }
+  if (keyKind !== "service_role") {
+    return {
+      error:
+        "В переменную SUPABASE_SERVICE_ROLE_KEY вставлен НЕ тот ключ (похоже, публичный anon). Нужен секретный service_role: Supabase → Project Settings → API → ключ с пометкой «service_role / secret» → Reveal → скопировать целиком. Затем заменить значение на Vercel и сделать Redeploy.",
     };
   }
 
