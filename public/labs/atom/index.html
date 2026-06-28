@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Планетарная модель атома (Резерфорд)</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: #333;
+        }
+
+        h1 {
+            font-weight: 300;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            color: #2c3e50;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .canvas-wrapper {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            padding: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        canvas {
+            display: block;
+            border-radius: 8px;
+            background: radial-gradient(circle at center, #ffffff 0%, #f4f6f8 100%);
+        }
+
+        .controls {
+            width: 280px;
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+            outline: none;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .info-panel {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .legend {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        /* Цвета частиц */
+        .c-proton { background-color: #e74c3c; }
+        .c-neutron { background-color: #95a5a6; }
+        .c-electron { background-color: #3498db; }
+
+    </style>
+</head>
+<body>
+
+    <h1>Модель атома (Резерфорд)</h1>
+
+    <div class="container">
+        <div class="canvas-wrapper">
+            <canvas id="atomCanvas" width="600" height="600"></canvas>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="atomSelect">Выберите элемент:</label>
+                <select id="atomSelect">
+                    <option value="H">Водород (H)</option>
+                    <option value="He">Гелий (He)</option>
+                    <option value="Li">Литий (Li)</option>
+                    <option value="Be">Бериллий (Be)</option>
+                    <option value="C" selected>Углерод (C)</option>
+                    <option value="O">Кислород (O)</option>
+                    <option value="Ne">Неон (Ne)</option>
+                    <option value="Au">Золото (Au) *Упрощено</option>
+                </select>
+            </div>
+
+            <div class="info-panel" id="infoPanel">
+                <div class="info-item">
+                    <span>Протоны (+):</span> <b id="pCount">6</b>
+                </div>
+                <div class="info-item">
+                    <span>Нейтроны (0):</span> <b id="nCount">6</b>
+                </div>
+                <div class="info-item">
+                    <span>Электроны (-):</span> <b id="eCount">6</b>
+                </div>
+            </div>
+
+            <div class="legend">
+                <div><span class="dot c-proton"></span> Протон (Ядро)</div>
+                <div><span class="dot c-neutron"></span> Нейтрон (Ядро)</div>
+                <div><span class="dot c-electron"></span> Электрон (Орбита)</div>
+            </div>
+            
+            <div style="margin-top: 20px; font-size: 0.8rem; color: #999; line-height: 1.4;">
+                * Примечание: В модели Резерфорда электроны движутся по орбитам вокруг массивного ядра. Масштаб ядра увеличен для наглядности.
+            </div>
+        </div>
+    </div>
+
+<script>
+    // База данных элементов
+    // Для Золота (Au) мы делаем визуальное упрощение, иначе 79 протонов превратят ядро в кашу, а браузер будет тормозить
+    const ELEMENTS = {
+        'H':  { name: 'Водород', p: 1, n: 0, e: 1, color: '#bdc3c7' },
+        'He': { name: 'Гелий', p: 2, n: 2, e: 2, color: '#f1c40f' },
+        'Li': { name: 'Литий', p: 3, n: 4, e: 3, color: '#e67e22' },
+        'Be': { name: 'Бериллий', p: 4, n: 5, e: 4, color: '#2ecc71' },
+        'C':  { name: 'Углерод', p: 6, n: 6, e: 6, color: '#34495e' },
+        'O':  { name: 'Кислород', p: 8, n: 8, e: 8, color: '#e74c3c' },
+        'Ne': { name: 'Неон', p: 10, n: 10, e: 10, color: '#9b59b6' },
+        'Au': { name: 'Золото', p: 79, n: 118, e: 79, color: '#f1c40f', scaleDown: true } 
+    };
+
+    const canvas = document.getElementById('atomCanvas');
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    // Состояние симуляции
+    let currentAtom = null;
+    let nucleusParticles = [];
+    let electrons = [];
+    let time = 0;
+
+    // Настройки отображения
+    const CONFIG = {
+        protonColor: '#e74c3c',
+        neutronColor: '#95a5a6',
+        electronColor: '#3498db',
+        orbitColor: 'rgba(0,0,0,0.1)',
+        nucleusRadiusBase: 15,
+        electronSpeed: 0.02
+    };
+
+    class NucleusParticle {
+        constructor(type, isBigAtom) {
+            this.type = type; // 'p' or 'n'
+            // Случайное положение внутри сферы ядра
+            // Для больших атомов делаем ядро плотнее
+            const spread = isBigAtom ? 25 : 10 + (currentAtom.p * 0.5); 
+            
+            const angle = Math.random() * Math.PI * 2;
+            const dist = Math.random() * spread; // Равномерное распределение внутри круга
+            
+            this.x = Math.cos(angle) * dist;
+            this.y = Math.sin(angle) * dist;
+            
+            // Размер частиц чуть меньше для тяжелых атомов
+            this.radius = isBigAtom ? 4 : 6; 
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.arc(centerX + this.x, centerY + this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.type === 'p' ? CONFIG.protonColor : CONFIG.neutronColor;
+            
+            // Градиент для псевдо-3D
+            const grad = ctx.createRadialGradient(
+                centerX + this.x - 2, centerY + this.y - 2, 1,
+                centerX + this.x, centerY + this.y, this.radius
+            );
+            grad.addColorStop(0, this.type === 'p' ? '#ff7675' : '#b2bec3');
+            grad.addColorStop(1, this.type === 'p' ? '#c0392b' : '#7f8c8d');
+            
+            ctx.fillStyle = grad;
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+            ctx.stroke();
+        }
+    }
+
+    class Electron {
+        constructor(index, total) {
+            this.index = index;
+            this.total = total;
+            
+            // Угол наклона орбиты. Распределяем равномерно по сфере (упрощенно по кругу)
+            this.orbitAngle = (Math.PI / total) * index; 
+            
+            // Радиус орбиты (сделаем немного разным для "живости", хотя у Резерфорда это не принципиально)
+            this.orbitRadiusX = 100 + Math.random() * 40 + (index * 2); 
+            this.orbitRadiusY = 40 + Math.random() * 20; // Эллиптичность
+
+            // Текущая позиция на орбите (фаза)
+            this.phase = Math.random() * Math.PI * 2;
+            this.speed = CONFIG.electronSpeed + Math.random() * 0.01;
+        }
+
+        update() {
+            this.phase += this.speed;
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            
+            // Поворачиваем холст на угол орбиты
+            ctx.rotate(this.orbitAngle * 2); // *2 разносит орбиты по 360 градусам
+
+            // Рисуем линию орбиты
+            ctx.beginPath();
+            ctx.ellipse(0, 0, this.orbitRadiusX, this.orbitRadiusY, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = CONFIG.orbitColor;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Вычисляем позицию электрона на этом эллипсе
+            const ex = Math.cos(this.phase) * this.orbitRadiusX;
+            const ey = Math.sin(this.phase) * this.orbitRadiusY;
+
+            // Рисуем электрон
+            ctx.beginPath();
+            ctx.arc(ex, ey, 5, 0, Math.PI * 2);
+            ctx.fillStyle = CONFIG.electronColor;
+            
+            // Свечение электрона
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = CONFIG.electronColor;
+            ctx.fill();
+            
+            ctx.shadowBlur = 0; // сброс
+
+            ctx.restore();
+        }
+    }
+
+    function initAtom(symbol) {
+        const data = ELEMENTS[symbol];
+        currentAtom = data;
+
+        // Обновляем UI
+        document.getElementById('pCount').innerText = data.p;
+        document.getElementById('nCount').innerText = data.n;
+        document.getElementById('eCount').innerText = data.e;
+
+        // Создаем Ядро
+        nucleusParticles = [];
+        const isBig = data.scaleDown || false;
+        
+        // Для золота рисуем не все 197 частиц, а просто "много", иначе тормозит отрисовка
+        const pCount = isBig ? 30 : data.p;
+        const nCount = isBig ? 40 : data.n;
+
+        for(let i=0; i<pCount; i++) nucleusParticles.push(new NucleusParticle('p', isBig));
+        for(let i=0; i<nCount; i++) nucleusParticles.push(new NucleusParticle('n', isBig));
+
+        // Перемешиваем массив, чтобы протоны и нейтроны были вперемешку
+        nucleusParticles.sort(() => Math.random() - 0.5);
+
+        // Создаем Электроны
+        electrons = [];
+        // Для золота тоже ограничиваем визуальное кол-во орбит, иначе будет просто синий шар
+        const eCount = isBig ? 20 : data.e;
+        
+        for(let i=0; i<eCount; i++) {
+            electrons.push(new Electron(i, eCount));
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, width, height);
+
+        // 1. Рисуем задние части орбит (чтобы ядро было внутри) - сложная задача для 2D Canvas
+        // Поэтому используем упрощение: сначала орбиты и электроны, потом ядро поверх.
+        // В идеале нужно сортировать Z-index, но для схематичной модели Резерфорда пойдет и так.
+
+        // Рисуем электроны и орбиты
+        electrons.forEach(e => {
+            e.update();
+            e.draw();
+        });
+
+        // Рисуем ядро (поверх орбит)
+        // Чтобы создать эффект объема ядра, сортируем частицы по Y (хотя они у нас в 2D плоскости X/Y)
+        // Для простоты просто рисуем их кучей
+        nucleusParticles.forEach(p => p.draw());
+
+        requestAnimationFrame(animate);
+    }
+
+    // Обработчик выбора
+    const selector = document.getElementById('atomSelect');
+    selector.addEventListener('change', (e) => {
+        initAtom(e.target.value);
+    });
+
+    // Запуск
+    initAtom('C'); // Начинаем с углерода
+    animate();
+
+</script>
+</body>
+</html>
