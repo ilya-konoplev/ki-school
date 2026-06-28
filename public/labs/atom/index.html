@@ -1,359 +1,371 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Планетарная модель атома (Резерфорд)</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            color: #333;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ki-school – модель атома Резерфорда</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAF8FF; --surface:#FFFFFF; --surface-2:#F4F0FC;
+    --text:#221C2E; --text-secondary:#5C5468; --text-muted:#8E84A3;
+    --border:#E6E1F2; --accent:#9974F7; --accent-deep:#6A3FD9; --accent-pale:#EFE9FE;
+    --on-accent:#FFFFFF; --radius:14px;
+    --font-display:'Fraunces','Iowan Old Style',Georgia,serif;
+    --font-body:'Inter',-apple-system,sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+  [data-theme="dark"]{
+    --bg:#15131C; --surface:#1D1A26; --surface-2:#241F30;
+    --text:#ECE8F7; --text-secondary:#A89FC2; --text-muted:#766C90;
+    --border:#2E293D; --accent:#9974F7; --accent-deep:#C7B3FB; --accent-pale:#2A2240;
+    --on-accent:#1B1428;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--font-body);
+    padding:20px; transition:background .3s ease, color .3s ease;
+  }
+  .eyebrow{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.06em;
+    color:var(--accent-deep); background:var(--accent-pale);
+    display:inline-block; padding:4px 10px; border-radius:6px; margin-bottom:10px;
+    transition:background .3s ease, color .3s ease;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:19px; margin:0 0 18px;}
 
-        h1 {
-            font-weight: 300;
-            margin-bottom: 10px;
-            letter-spacing: 1px;
-            color: #2c3e50;
-        }
+  .viz{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    height:320px; margin-bottom:10px; overflow:hidden;
+    transition:background .3s ease, border-color .3s ease;
+  }
+  .viz canvas{display:block; width:100%; height:100%;}
 
-        .container {
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-        }
+  .note{font-size:12px; color:var(--text-muted); margin:0 0 18px; line-height:1.5;}
 
-        .canvas-wrapper {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            padding: 10px;
-            border: 1px solid #e9ecef;
-        }
+  .panel{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:18px; display:flex; flex-direction:column; gap:16px;
+    transition:background .3s ease, border-color .3s ease;
+  }
 
-        canvas {
-            display: block;
-            border-radius: 8px;
-            background: radial-gradient(circle at center, #ffffff 0%, #f4f6f8 100%);
-        }
+  .atom-selector{display:flex; flex-wrap:wrap; gap:8px;}
+  .atom-chip{
+    font-family:var(--font-body); background:var(--surface); border:1px solid var(--border);
+    color:var(--text); padding:8px 12px; border-radius:9px; cursor:pointer;
+    transition:border-color .25s ease, background .25s ease, color .25s ease;
+    display:flex; flex-direction:column; align-items:center; gap:2px; min-width:58px;
+  }
+  .atom-chip .symbol{font-family:var(--font-display); font-size:16px; font-weight:600;}
+  .atom-chip .count{font-family:var(--font-mono); font-size:10px; color:var(--text-muted); transition:color .25s ease;}
+  .atom-chip:hover{border-color:var(--accent); color:var(--accent-deep);}
+  .atom-chip.active{border-color:var(--accent); background:var(--accent-pale); color:var(--accent-deep);}
+  .atom-chip.active .count{color:var(--accent-deep);}
 
-        .controls {
-            width: 280px;
-            background: #fff;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-            border: 1px solid #e9ecef;
-        }
+  .readouts{display:flex; flex-wrap:wrap; gap:10px 22px;}
 
-        .control-group {
-            margin-bottom: 20px;
-        }
+  .control-row{display:flex; align-items:center; gap:14px;}
+  .control-row label{font-size:13px; color:var(--text-secondary); width:140px; flex-shrink:0;}
+  input[type=range]{
+    -webkit-appearance:none; flex:1; height:4px;
+    background:var(--surface-2); border-radius:4px; outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+    background:var(--accent); cursor:pointer;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:16px; height:16px; border-radius:50%; background:var(--accent); border:none; cursor:pointer;
+  }
+  .value-readout{font-family:var(--font-mono); font-size:13px; color:var(--text-secondary); white-space:nowrap;}
+  .value-readout b{color:var(--text); font-weight:500;}
 
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #555;
-        }
+  .actions{display:flex; gap:10px; flex-wrap:wrap;}
+  .btn-primary{
+    background:var(--accent); color:var(--on-accent); padding:10px 18px; border:none;
+    border-radius:9px; font-family:var(--font-body); font-weight:500; font-size:13px; cursor:pointer;
+    transition:opacity .25s ease;
+  }
+  .btn-primary:hover{opacity:.88;}
+  .btn-secondary{
+    background:none; border:1px solid var(--border); color:var(--text); padding:10px 18px;
+    border-radius:9px; font-family:var(--font-body); font-weight:500; font-size:13px; cursor:pointer;
+    transition:border-color .25s ease, color .25s ease;
+  }
+  .btn-secondary:hover{border-color:var(--accent); color:var(--accent-deep);}
 
-        select {
-            width: 100%;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            font-size: 1rem;
-            outline: none;
-            background: #fff;
-            cursor: pointer;
-        }
-
-        .info-panel {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-        }
-
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-        }
-
-        .legend {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            font-size: 0.85rem;
-            color: #666;
-        }
-
-        .dot {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-
-        /* Цвета частиц */
-        .c-proton { background-color: #e74c3c; }
-        .c-neutron { background-color: #95a5a6; }
-        .c-electron { background-color: #3498db; }
-
-    </style>
+  @media (max-width:480px){
+    .control-row{flex-wrap:wrap;}
+    .control-row label{width:100%;}
+  }
+</style>
 </head>
 <body>
 
-    <h1>Модель атома (Резерфорд)</h1>
+<div class="eyebrow">ФИЗИКА · СТРОЕНИЕ АТОМА</div>
+<h3>Планетарная модель атома Резерфорда</h3>
 
-    <div class="container">
-        <div class="canvas-wrapper">
-            <canvas id="atomCanvas" width="600" height="600"></canvas>
-        </div>
+<div class="viz" id="vizContainer">
+  <canvas id="atomCanvas" aria-hidden="true"></canvas>
+</div>
+<p class="note">Маленькое плотное ядро из протонов и нейтронов, вокруг которого по эллиптическим орбитам движутся электроны – как у планет, орбиты не идеально круглые. Орбиты одинакового размера, но наклонены под разными углами, поэтому они заметно перекрываются: это стилизация для наглядности, а не точная схема энергетических уровней.</p>
 
-        <div class="controls">
-            <div class="control-group">
-                <label for="atomSelect">Выберите элемент:</label>
-                <select id="atomSelect">
-                    <option value="H">Водород (H)</option>
-                    <option value="He">Гелий (He)</option>
-                    <option value="Li">Литий (Li)</option>
-                    <option value="Be">Бериллий (Be)</option>
-                    <option value="C" selected>Углерод (C)</option>
-                    <option value="O">Кислород (O)</option>
-                    <option value="Ne">Неон (Ne)</option>
-                    <option value="Au">Золото (Au) *Упрощено</option>
-                </select>
-            </div>
+<div class="panel">
+  <div class="atom-selector" id="atomSelector"></div>
 
-            <div class="info-panel" id="infoPanel">
-                <div class="info-item">
-                    <span>Протоны (+):</span> <b id="pCount">6</b>
-                </div>
-                <div class="info-item">
-                    <span>Нейтроны (0):</span> <b id="nCount">6</b>
-                </div>
-                <div class="info-item">
-                    <span>Электроны (-):</span> <b id="eCount">6</b>
-                </div>
-            </div>
+  <div class="readouts">
+    <div class="value-readout">Элемент: <b id="nameOut">Литий</b></div>
+    <div class="value-readout">Протоны: <b id="protonsOut">3</b></div>
+    <div class="value-readout">Нейтроны: <b id="neutronsOut">4</b></div>
+    <div class="value-readout">Электроны: <b id="electronsOut">3</b></div>
+    <div class="value-readout">Массовое число: <b id="massOut">7</b></div>
+  </div>
 
-            <div class="legend">
-                <div><span class="dot c-proton"></span> Протон (Ядро)</div>
-                <div><span class="dot c-neutron"></span> Нейтрон (Ядро)</div>
-                <div><span class="dot c-electron"></span> Электрон (Орбита)</div>
-            </div>
-            
-            <div style="margin-top: 20px; font-size: 0.8rem; color: #999; line-height: 1.4;">
-                * Примечание: В модели Резерфорда электроны движутся по орбитам вокруг массивного ядра. Масштаб ядра увеличен для наглядности.
-            </div>
-        </div>
-    </div>
+  <div class="control-row">
+    <label>Скорость вращения</label>
+    <input type="range" id="speed" min="0" max="100" value="55">
+    <span class="value-readout" id="speedOut"><b>55</b></span>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" id="playBtn">Пауза</button>
+    <button class="btn-secondary" id="resetBtn">Сбросить</button>
+  </div>
+</div>
 
 <script>
-    // База данных элементов
-    // Для Золота (Au) мы делаем визуальное упрощение, иначе 79 протонов превратят ядро в кашу, а браузер будет тормозить
-    const ELEMENTS = {
-        'H':  { name: 'Водород', p: 1, n: 0, e: 1, color: '#bdc3c7' },
-        'He': { name: 'Гелий', p: 2, n: 2, e: 2, color: '#f1c40f' },
-        'Li': { name: 'Литий', p: 3, n: 4, e: 3, color: '#e67e22' },
-        'Be': { name: 'Бериллий', p: 4, n: 5, e: 4, color: '#2ecc71' },
-        'C':  { name: 'Углерод', p: 6, n: 6, e: 6, color: '#34495e' },
-        'O':  { name: 'Кислород', p: 8, n: 8, e: 8, color: '#e74c3c' },
-        'Ne': { name: 'Неон', p: 10, n: 10, e: 10, color: '#9b59b6' },
-        'Au': { name: 'Золото', p: 79, n: 118, e: 79, color: '#f1c40f', scaleDown: true } 
+(function(){
+  // --- синхронизация темы с сайтом ---
+  const params = new URLSearchParams(location.search);
+  document.documentElement.setAttribute('data-theme', params.get('theme') || 'light');
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'theme') {
+      document.documentElement.setAttribute('data-theme', e.data.value);
+      updateColors();
+    }
+  });
+
+  // --- атомы: 6 штук, у каждого своё число электронов ---
+  const atoms = [
+    {symbol:'Li', name:'Литий',    protons:3,  neutrons:4,   electrons:3},
+    {symbol:'C',  name:'Углерод',  protons:6,  neutrons:6,   electrons:6},
+    {symbol:'O',  name:'Кислород', protons:8,  neutrons:8,   electrons:8},
+    {symbol:'Ne', name:'Неон',     protons:10, neutrons:10,  electrons:10},
+    {symbol:'Sn', name:'Олово',    protons:50, neutrons:70,  electrons:50},
+    {symbol:'U',  name:'Уран',     protons:92, neutrons:146, electrons:92}
+  ];
+
+  // --- DOM ---
+  const container = document.getElementById('vizContainer');
+  const canvas = document.getElementById('atomCanvas');
+  const ctx = canvas.getContext('2d');
+  const selectorEl = document.getElementById('atomSelector');
+  const nameOut = document.getElementById('nameOut');
+  const protonsOut = document.getElementById('protonsOut');
+  const neutronsOut = document.getElementById('neutronsOut');
+  const electronsOut = document.getElementById('electronsOut');
+  const massOut = document.getElementById('massOut');
+  const speedSlider = document.getElementById('speed');
+  const speedOut = document.getElementById('speedOut');
+  const playBtn = document.getElementById('playBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  // --- состояние ---
+  let W = 0, H = 0;
+  let baseA = 0, baseB = 0;
+  let currentIndex = 0;
+  let rings = []; // {count, rot, angle, speedFactor}
+  let nucleonsRel = [];
+  let playing = true;
+  let lastTime = null;
+  let speedMultiplier = computeSpeedMultiplier(55);
+  const colors = {};
+  const nucleonRadius = 4.5;
+  const electronRadius = 6;
+
+  function computeSpeedMultiplier(v){ return (v / 100) * 2; }
+
+  function updateColors(){
+    const cs = getComputedStyle(document.documentElement);
+    colors.accent = cs.getPropertyValue('--accent').trim();
+    colors.accentDeep = cs.getPropertyValue('--accent-deep').trim();
+    colors.textMuted = cs.getPropertyValue('--text-muted').trim();
+    colors.border = cs.getPropertyValue('--border').trim();
+  }
+
+  function nucleusMaxRadius(n){ return 14 + Math.sqrt(n) * 4; }
+
+  function generateNucleonsRel(protons, neutrons){
+    const types = [];
+    for (let i = 0; i < protons; i++) types.push('p');
+    for (let i = 0; i < neutrons; i++) types.push('n');
+    for (let i = types.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = types[i]; types[i] = types[j]; types[j] = tmp;
+    }
+    const n = types.length;
+    if (n === 0) return [];
+    if (n === 1) return [{type: types[0], ux: 0, uy: 0}];
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    const maxR = nucleusMaxRadius(n);
+    const spacing = maxR / Math.sqrt(n + 0.5);
+    return types.map((type, i) => {
+      const r = spacing * Math.sqrt(i + 0.5);
+      const theta = i * goldenAngle;
+      return {type, ux: r * Math.cos(theta), uy: r * Math.sin(theta)};
+    });
+  }
+
+  function ellipsePoint(cx, cy, orbit, t){
+    const cosR = Math.cos(orbit.rot), sinR = Math.sin(orbit.rot);
+    const lx = orbit.a * Math.cos(t), ly = orbit.b * Math.sin(t);
+    return {
+      x: cx + lx * cosR - ly * sinR,
+      y: cy + lx * sinR + ly * cosR
     };
+  }
 
-    const canvas = document.getElementById('atomCanvas');
-    const ctx = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
-    const centerX = width / 2;
-    const centerY = height / 2;
+  function recomputeOrbits(){
+    const minSide = Math.min(W, H);
+    baseA = minSide * 0.42;
+    baseB = baseA * 0.45;
+  }
 
-    // Состояние симуляции
-    let currentAtom = null;
-    let nucleusParticles = [];
-    let electrons = [];
-    let time = 0;
-
-    // Настройки отображения
-    const CONFIG = {
-        protonColor: '#e74c3c',
-        neutronColor: '#95a5a6',
-        electronColor: '#3498db',
-        orbitColor: 'rgba(0,0,0,0.1)',
-        nucleusRadiusBase: 15,
-        electronSpeed: 0.02
-    };
-
-    class NucleusParticle {
-        constructor(type, isBigAtom) {
-            this.type = type; // 'p' or 'n'
-            // Случайное положение внутри сферы ядра
-            // Для больших атомов делаем ядро плотнее
-            const spread = isBigAtom ? 25 : 10 + (currentAtom.p * 0.5); 
-            
-            const angle = Math.random() * Math.PI * 2;
-            const dist = Math.random() * spread; // Равномерное распределение внутри круга
-            
-            this.x = Math.cos(angle) * dist;
-            this.y = Math.sin(angle) * dist;
-            
-            // Размер частиц чуть меньше для тяжелых атомов
-            this.radius = isBigAtom ? 4 : 6; 
-        }
-
-        draw() {
-            ctx.beginPath();
-            ctx.arc(centerX + this.x, centerY + this.y, this.radius, 0, Math.PI * 2);
-            ctx.fillStyle = this.type === 'p' ? CONFIG.protonColor : CONFIG.neutronColor;
-            
-            // Градиент для псевдо-3D
-            const grad = ctx.createRadialGradient(
-                centerX + this.x - 2, centerY + this.y - 2, 1,
-                centerX + this.x, centerY + this.y, this.radius
-            );
-            grad.addColorStop(0, this.type === 'p' ? '#ff7675' : '#b2bec3');
-            grad.addColorStop(1, this.type === 'p' ? '#c0392b' : '#7f8c8d');
-            
-            ctx.fillStyle = grad;
-            ctx.fill();
-            ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-            ctx.stroke();
-        }
+  function buildRings(electrons){
+    const ringCount = Math.min(4, Math.max(1, Math.ceil(electrons / 2)));
+    const base = Math.floor(electrons / ringCount);
+    const remainder = electrons - base * ringCount;
+    const result = [];
+    for (let k = 0; k < ringCount; k++){
+      const count = base + (k < remainder ? 1 : 0);
+      const rot = ringCount === 1
+        ? 25 * Math.PI / 180
+        : k * (180 / ringCount) * Math.PI / 180;
+      result.push({count, rot, angle: 0, speedFactor: 1 - k * 0.12});
     }
+    return result;
+  }
 
-    class Electron {
-        constructor(index, total) {
-            this.index = index;
-            this.total = total;
-            
-            // Угол наклона орбиты. Распределяем равномерно по сфере (упрощенно по кругу)
-            this.orbitAngle = (Math.PI / total) * index; 
-            
-            // Радиус орбиты (сделаем немного разным для "живости", хотя у Резерфорда это не принципиально)
-            this.orbitRadiusX = 100 + Math.random() * 40 + (index * 2); 
-            this.orbitRadiusY = 40 + Math.random() * 20; // Эллиптичность
+  function resizeCanvas(){
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    W = w; H = h;
+    recomputeOrbits();
+  }
 
-            // Текущая позиция на орбите (фаза)
-            this.phase = Math.random() * Math.PI * 2;
-            this.speed = CONFIG.electronSpeed + Math.random() * 0.01;
-        }
+  function selectAtom(index){
+    currentIndex = index;
+    const atom = atoms[index];
+    nameOut.textContent = atom.name;
+    protonsOut.textContent = atom.protons;
+    neutronsOut.textContent = atom.neutrons;
+    electronsOut.textContent = atom.electrons;
+    massOut.textContent = atom.protons + atom.neutrons;
+    rings = buildRings(atom.electrons);
+    nucleonsRel = generateNucleonsRel(atom.protons, atom.neutrons);
+    document.querySelectorAll('.atom-chip').forEach((chip, i) => {
+      chip.classList.toggle('active', i === index);
+    });
+  }
 
-        update() {
-            this.phase += this.speed;
-        }
+  function drawDot(x, y, r){
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
-        draw() {
-            ctx.save();
-            ctx.translate(centerX, centerY);
-            
-            // Поворачиваем холст на угол орбиты
-            ctx.rotate(this.orbitAngle * 2); // *2 разносит орбиты по 360 градусам
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+    const cx = W / 2, cy = H / 2;
 
-            // Рисуем линию орбиты
-            ctx.beginPath();
-            ctx.ellipse(0, 0, this.orbitRadiusX, this.orbitRadiusY, 0, 0, Math.PI * 2);
-            ctx.strokeStyle = CONFIG.orbitColor;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-
-            // Вычисляем позицию электрона на этом эллипсе
-            const ex = Math.cos(this.phase) * this.orbitRadiusX;
-            const ey = Math.sin(this.phase) * this.orbitRadiusY;
-
-            // Рисуем электрон
-            ctx.beginPath();
-            ctx.arc(ex, ey, 5, 0, Math.PI * 2);
-            ctx.fillStyle = CONFIG.electronColor;
-            
-            // Свечение электрона
-            ctx.shadowBlur = 5;
-            ctx.shadowColor = CONFIG.electronColor;
-            ctx.fill();
-            
-            ctx.shadowBlur = 0; // сброс
-
-            ctx.restore();
-        }
-    }
-
-    function initAtom(symbol) {
-        const data = ELEMENTS[symbol];
-        currentAtom = data;
-
-        // Обновляем UI
-        document.getElementById('pCount').innerText = data.p;
-        document.getElementById('nCount').innerText = data.n;
-        document.getElementById('eCount').innerText = data.e;
-
-        // Создаем Ядро
-        nucleusParticles = [];
-        const isBig = data.scaleDown || false;
-        
-        // Для золота рисуем не все 197 частиц, а просто "много", иначе тормозит отрисовка
-        const pCount = isBig ? 30 : data.p;
-        const nCount = isBig ? 40 : data.n;
-
-        for(let i=0; i<pCount; i++) nucleusParticles.push(new NucleusParticle('p', isBig));
-        for(let i=0; i<nCount; i++) nucleusParticles.push(new NucleusParticle('n', isBig));
-
-        // Перемешиваем массив, чтобы протоны и нейтроны были вперемешку
-        nucleusParticles.sort(() => Math.random() - 0.5);
-
-        // Создаем Электроны
-        electrons = [];
-        // Для золота тоже ограничиваем визуальное кол-во орбит, иначе будет просто синий шар
-        const eCount = isBig ? 20 : data.e;
-        
-        for(let i=0; i<eCount; i++) {
-            electrons.push(new Electron(i, eCount));
-        }
-    }
-
-    function animate() {
-        ctx.clearRect(0, 0, width, height);
-
-        // 1. Рисуем задние части орбит (чтобы ядро было внутри) - сложная задача для 2D Canvas
-        // Поэтому используем упрощение: сначала орбиты и электроны, потом ядро поверх.
-        // В идеале нужно сортировать Z-index, но для схематичной модели Резерфорда пойдет и так.
-
-        // Рисуем электроны и орбиты
-        electrons.forEach(e => {
-            e.update();
-            e.draw();
-        });
-
-        // Рисуем ядро (поверх орбит)
-        // Чтобы создать эффект объема ядра, сортируем частицы по Y (хотя они у нас в 2D плоскости X/Y)
-        // Для простоты просто рисуем их кучей
-        nucleusParticles.forEach(p => p.draw());
-
-        requestAnimationFrame(animate);
-    }
-
-    // Обработчик выбора
-    const selector = document.getElementById('atomSelect');
-    selector.addEventListener('change', (e) => {
-        initAtom(e.target.value);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = colors.border;
+    rings.forEach(ring => {
+      if (ring.count <= 0) return;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, baseA, baseB, ring.rot, 0, Math.PI * 2);
+      ctx.stroke();
     });
 
-    // Запуск
-    initAtom('C'); // Начинаем с углерода
-    animate();
+    nucleonsRel.forEach(p => {
+      ctx.fillStyle = p.type === 'p' ? colors.accentDeep : colors.textMuted;
+      drawDot(cx + p.ux, cy + p.uy, nucleonRadius);
+    });
 
+    ctx.fillStyle = colors.accent;
+    rings.forEach(ring => {
+      for (let i = 0; i < ring.count; i++){
+        const t = ring.angle + i * (2 * Math.PI / ring.count);
+        const pt = ellipsePoint(cx, cy, {a: baseA, b: baseB, rot: ring.rot}, t);
+        drawDot(pt.x, pt.y, electronRadius);
+      }
+    });
+  }
+
+  function loop(ts){
+    if (lastTime === null) lastTime = ts;
+    const dt = (ts - lastTime) / 1000;
+    lastTime = ts;
+    if (playing){
+      rings.forEach(ring => {
+        ring.angle += dt * 0.8 * speedMultiplier * ring.speedFactor;
+      });
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // --- кнопки выбора атома ---
+  atoms.forEach((atom, i) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'atom-chip';
+    chip.innerHTML = '<span class="symbol">' + atom.symbol + '</span><span class="count">' + atom.electrons + 'e⁻</span>';
+    chip.addEventListener('click', () => selectAtom(i));
+    selectorEl.appendChild(chip);
+  });
+
+  // --- управление ---
+  speedSlider.addEventListener('input', (e) => {
+    const v = e.target.value;
+    speedOut.querySelector('b').textContent = v;
+    speedMultiplier = computeSpeedMultiplier(v);
+  });
+
+  playBtn.addEventListener('click', () => {
+    playing = !playing;
+    playBtn.textContent = playing ? 'Пауза' : 'Старт';
+  });
+
+  resetBtn.addEventListener('click', () => {
+    rings.forEach(ring => { ring.angle = 0; });
+    speedSlider.value = 55;
+    speedOut.querySelector('b').textContent = '55';
+    speedMultiplier = computeSpeedMultiplier(55);
+    playing = true;
+    playBtn.textContent = 'Пауза';
+  });
+
+  window.addEventListener('resize', resizeCanvas);
+  if (window.ResizeObserver){
+    new ResizeObserver(() => resizeCanvas()).observe(container);
+  }
+
+  // --- инициализация ---
+  updateColors();
+  selectAtom(0);
+  resizeCanvas();
+  requestAnimationFrame(loop);
+})();
 </script>
+
 </body>
 </html>
