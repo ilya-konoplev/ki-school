@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { deleteRequest, setRequestRead } from "@/app/admin/actions";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import { listRequests } from "@/lib/admin";
 import { formatDateTime } from "@/lib/dates";
 
@@ -57,21 +58,22 @@ export default async function AdminRequestsPage() {
                     name="is_read"
                     value={r.isRead ? "false" : "true"}
                   />
-                  <button
-                    type="submit"
+                  <SubmitButton
+                    pendingText="…"
                     className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:border-accent hover:text-accent"
                   >
                     {r.isRead ? "Отметить непрочитанной" : "Отметить прочитанной"}
-                  </button>
+                  </SubmitButton>
                 </form>
                 <form action={deleteRequest}>
                   <input type="hidden" name="id" value={r.id} />
-                  <button
-                    type="submit"
+                  <SubmitButton
+                    danger
+                    pendingText="…"
                     className="rounded-lg px-3 py-1.5 text-xs text-danger transition-colors hover:bg-danger/10"
                   >
                     Удалить
-                  </button>
+                  </SubmitButton>
                 </form>
               </div>
             </div>

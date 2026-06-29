@@ -6,6 +6,9 @@ import { requireAdmin, usernameToEmail } from "@/lib/auth";
 import { createAdminClient, describeSupabaseKey } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
+/** Результат формы для показа плашки «сохранено / ошибка». */
+export type AdminResult = { ok?: boolean; error?: string };
+
 // ── Родители ────────────────────────────────────────────────────────────────
 
 export type CreateParentState = { error?: string };
@@ -81,37 +84,43 @@ export async function deleteParent(formData: FormData) {
 
 // ── Ученики ─────────────────────────────────────────────────────────────────
 
-export async function createStudent(formData: FormData) {
+export async function createStudent(formData: FormData): Promise<AdminResult> {
   await requireAdmin();
   const parentId = String(formData.get("parent_id") ?? "");
   const fullName = String(formData.get("full_name") ?? "").trim();
   const examDate = String(formData.get("exam_date") ?? "").trim();
-  if (!parentId || !fullName) return;
+  if (!parentId || !fullName) return { error: "Укажите имя ученика." };
 
   const supabase = await createClient();
-  await supabase.from("students").insert({
+  const { error } = await supabase.from("students").insert({
     parent_id: parentId,
     full_name: fullName,
     exam_date: examDate || null,
   });
+  if (error) return { error: "Не удалось добавить ученика." };
+
   revalidatePath("/admin/parents");
+  return { ok: true };
 }
 
-export async function updateStudent(formData: FormData) {
+export async function updateStudent(formData: FormData): Promise<AdminResult> {
   await requireAdmin();
   const id = String(formData.get("id") ?? "");
   const fullName = String(formData.get("full_name") ?? "").trim();
   const examDate = String(formData.get("exam_date") ?? "").trim();
-  if (!id || !fullName) return;
+  if (!id || !fullName) return { error: "Укажите имя ученика." };
 
   const supabase = await createClient();
-  await supabase
+  const { error } = await supabase
     .from("students")
     .update({ full_name: fullName, exam_date: examDate || null })
     .eq("id", id);
+  if (error) return { error: "Не удалось сохранить." };
+
   revalidatePath(`/admin/students/${id}`);
   revalidatePath("/admin/parents");
   revalidatePath("/cabinet");
+  return { ok: true };
 }
 
 export async function deleteStudent(formData: FormData) {
@@ -162,24 +171,27 @@ export async function toggleProgress(
 
 // ── Занятия ───────────────────────────────────────────────────────────────────
 
-export async function addLesson(formData: FormData) {
+export async function addLesson(formData: FormData): Promise<AdminResult> {
   await requireAdmin();
   const studentId = String(formData.get("student_id") ?? "");
   const local = String(formData.get("scheduled_at") ?? ""); // YYYY-MM-DDTHH:mm
   const note = String(formData.get("note") ?? "").trim();
-  if (!studentId || !local) return;
+  if (!studentId || !local) return { error: "Укажите дату и время." };
 
   // Время вводится по Москве – фиксируем смещение +03:00.
   const isoMoscow = `${local}:00+03:00`;
 
   const supabase = await createClient();
-  await supabase.from("lessons").insert({
+  const { error } = await supabase.from("lessons").insert({
     student_id: studentId,
     scheduled_at: new Date(isoMoscow).toISOString(),
     note: note || null,
   });
+  if (error) return { error: "Не удалось добавить занятие." };
+
   revalidatePath(`/admin/students/${studentId}`);
   revalidatePath("/cabinet");
+  return { ok: true };
 }
 
 export async function deleteLesson(formData: FormData) {
@@ -196,16 +208,21 @@ export async function deleteLesson(formData: FormData) {
 
 // ── Комментарии ────────────────────────────────────────────────────────────────
 
-export async function addComment(formData: FormData) {
+export async function addComment(formData: FormData): Promise<AdminResult> {
   await requireAdmin();
   const studentId = String(formData.get("student_id") ?? "");
   const body = String(formData.get("body") ?? "").trim();
-  if (!studentId || !body) return;
+  if (!studentId || !body) return { error: "Введите текст комментария." };
 
   const supabase = await createClient();
-  await supabase.from("comments").insert({ student_id: studentId, body });
+  const { error } = await supabase
+    .from("comments")
+    .insert({ student_id: studentId, body });
+  if (error) return { error: "Не удалось добавить комментарий." };
+
   revalidatePath(`/admin/students/${studentId}`);
   revalidatePath("/cabinet");
+  return { ok: true };
 }
 
 export async function deleteComment(formData: FormData) {
@@ -248,15 +265,23 @@ export async function deleteRequest(formData: FormData) {
 
 // ── Настройки и тексты ─────────────────────────────────────────────────────────
 
-export async function setPublicExamDate(formData: FormData) {
+export async function setPublicExamDate(
+  formData: FormData,
+): Promise<AdminResult> {
   await requireAdmin();
   const date = String(formData.get("public_exam_date") ?? "").trim();
-  if (!date) return;
+  if (!date) return { error: "Укажите дату." };
+
   const supabase = await createClient();
-  await supabase
-    .from("site_settings")
-    .upsert({ key: "public_exam_date", value: date, updated_at: new Date().toISOString() });
+  const { error } = await supabase.from("site_settings").upsert({
+    key: "public_exam_date",
+    value: date,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) return { error: "Не удалось сохранить дату." };
+
   revalidatePath("/", "layout");
+  return { ok: true };
 }
 
 const TEXT_KEYS = [
@@ -272,7 +297,7 @@ const TEXT_KEYS = [
   "guestInviteText",
 ] as const;
 
-export async function saveTexts(formData: FormData) {
+export async function saveTexts(formData: FormData): Promise<AdminResult> {
   await requireAdmin();
   const value: Record<string, string> = {};
   for (const key of TEXT_KEYS) {
@@ -280,10 +305,15 @@ export async function saveTexts(formData: FormData) {
     if (typeof v === "string") value[key] = v;
   }
   const supabase = await createClient();
-  await supabase
-    .from("site_settings")
-    .upsert({ key: "texts", value, updated_at: new Date().toISOString() });
+  const { error } = await supabase.from("site_settings").upsert({
+    key: "texts",
+    value,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) return { error: "Не удалось сохранить тексты." };
+
   revalidatePath("/", "layout");
+  return { ok: true };
 }
 
 // ── Услуги ─────────────────────────────────────────────────────────────────────
@@ -295,7 +325,7 @@ function parsePoints(raw: string): string[] {
     .filter(Boolean);
 }
 
-export async function saveService(formData: FormData) {
+export async function saveService(formData: FormData): Promise<AdminResult> {
   await requireAdmin();
   const id = String(formData.get("id") ?? "");
   const slug = String(formData.get("slug") ?? "").trim();
@@ -303,21 +333,18 @@ export async function saveService(formData: FormData) {
   const summary = String(formData.get("summary") ?? "").trim();
   const points = parsePoints(String(formData.get("points") ?? ""));
   const sortOrder = Number(formData.get("sort_order") ?? 0) || 0;
-  if (!slug || !title) return;
+  if (!slug || !title) return { error: "Заполните заголовок и slug." };
 
   const supabase = await createClient();
-  if (id) {
-    await supabase
-      .from("services")
-      .update({ slug, title, summary, points, sort_order: sortOrder })
-      .eq("id", id);
-  } else {
-    await supabase
-      .from("services")
-      .insert({ slug, title, summary, points, sort_order: sortOrder });
-  }
+  const row = { slug, title, summary, points, sort_order: sortOrder };
+  const { error } = id
+    ? await supabase.from("services").update(row).eq("id", id)
+    : await supabase.from("services").insert(row);
+  if (error) return { error: "Не удалось сохранить услугу." };
+
   revalidatePath("/", "layout");
   revalidatePath("/admin/services");
+  return { ok: true };
 }
 
 export async function deleteService(formData: FormData) {
@@ -333,7 +360,7 @@ export async function deleteService(formData: FormData) {
 
 // ── Отзывы ─────────────────────────────────────────────────────────────────────
 
-export async function saveReview(formData: FormData) {
+export async function saveReview(formData: FormData): Promise<AdminResult> {
   await requireAdmin();
   const id = String(formData.get("id") ?? "");
   const author = String(formData.get("author") ?? "").trim();
@@ -342,7 +369,7 @@ export async function saveReview(formData: FormData) {
   const ratingRaw = String(formData.get("rating") ?? "").trim();
   const rating = ratingRaw ? Number(ratingRaw) : null;
   const sortOrder = Number(formData.get("sort_order") ?? 0) || 0;
-  if (!author || !body) return;
+  if (!author || !body) return { error: "Заполните автора и текст." };
 
   const supabase = await createClient();
   const row = {
@@ -352,13 +379,14 @@ export async function saveReview(formData: FormData) {
     rating,
     sort_order: sortOrder,
   };
-  if (id) {
-    await supabase.from("reviews").update(row).eq("id", id);
-  } else {
-    await supabase.from("reviews").insert(row);
-  }
+  const { error } = id
+    ? await supabase.from("reviews").update(row).eq("id", id)
+    : await supabase.from("reviews").insert(row);
+  if (error) return { error: "Не удалось сохранить отзыв." };
+
   revalidatePath("/", "layout");
   revalidatePath("/admin/reviews");
+  return { ok: true };
 }
 
 export async function deleteReview(formData: FormData) {

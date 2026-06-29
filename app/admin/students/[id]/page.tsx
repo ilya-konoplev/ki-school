@@ -9,7 +9,9 @@ import {
   deleteStudent,
   updateStudent,
 } from "@/app/admin/actions";
+import { ActionForm } from "@/components/admin/ActionForm";
 import { ProgressEditor } from "@/components/admin/ProgressEditor";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import { getStudentDetails } from "@/lib/admin";
 import { subjects } from "@/lib/content/materials";
 import { formatDate, formatDateTime } from "@/lib/dates";
@@ -61,36 +63,30 @@ export default async function StudentPage({
       {/* Данные ученика */}
       <section className="rounded-2xl border border-border bg-surface p-6">
         <h2 className="text-lg font-semibold tracking-tight">Данные ученика</h2>
-        <form
-          action={updateStudent}
-          className="mt-4 flex flex-wrap items-end gap-3"
-        >
-          <input type="hidden" name="id" value={details.id} />
-          <div className="grow">
-            <label className="mb-1 block text-xs text-muted">Имя</label>
-            <input
-              name="full_name"
-              defaultValue={details.fullName}
-              required
-              className={inputClass}
-            />
+        <ActionForm action={updateStudent} className="mt-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <input type="hidden" name="id" value={details.id} />
+            <div className="grow">
+              <label className="mb-1 block text-xs text-muted">Имя</label>
+              <input
+                name="full_name"
+                defaultValue={details.fullName}
+                required
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted">Дата ОГЭ</label>
+              <input
+                type="date"
+                name="exam_date"
+                defaultValue={details.examDate ?? ""}
+                className={inputClass}
+              />
+            </div>
+            <SubmitButton>Сохранить</SubmitButton>
           </div>
-          <div>
-            <label className="mb-1 block text-xs text-muted">Дата ОГЭ</label>
-            <input
-              type="date"
-              name="exam_date"
-              defaultValue={details.examDate ?? ""}
-              className={inputClass}
-            />
-          </div>
-          <button
-            type="submit"
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
-          >
-            Сохранить
-          </button>
-        </form>
+        </ActionForm>
       </section>
 
       {/* Занятия */}
@@ -101,39 +97,38 @@ export default async function StudentPage({
           Время – по Москве.
         </p>
 
-        <form
+        <ActionForm
           action={addLesson}
-          className="mt-4 flex flex-wrap items-end gap-3"
+          resetOnSuccess
+          successText="Занятие добавлено"
+          className="mt-4"
         >
-          <input type="hidden" name="student_id" value={details.id} />
-          <div>
-            <label className="mb-1 block text-xs text-muted">
-              Дата и время (МСК)
-            </label>
-            <input
-              type="datetime-local"
-              name="scheduled_at"
-              required
-              className={inputClass}
-            />
+          <div className="flex flex-wrap items-end gap-3">
+            <input type="hidden" name="student_id" value={details.id} />
+            <div>
+              <label className="mb-1 block text-xs text-muted">
+                Дата и время (МСК)
+              </label>
+              <input
+                type="datetime-local"
+                name="scheduled_at"
+                required
+                className={inputClass}
+              />
+            </div>
+            <div className="grow">
+              <label className="mb-1 block text-xs text-muted">
+                Заметка (необязательно)
+              </label>
+              <input
+                name="note"
+                placeholder="Например, повторение динамики"
+                className={inputClass}
+              />
+            </div>
+            <SubmitButton pendingText="Добавляем…">+ Добавить</SubmitButton>
           </div>
-          <div className="grow">
-            <label className="mb-1 block text-xs text-muted">
-              Заметка (необязательно)
-            </label>
-            <input
-              name="note"
-              placeholder="Например, повторение динамики"
-              className={inputClass}
-            />
-          </div>
-          <button
-            type="submit"
-            className="rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:border-accent hover:text-accent"
-          >
-            + Добавить
-          </button>
-        </form>
+        </ActionForm>
 
         <ul className="mt-4 divide-y divide-border">
           {details.lessons.length === 0 ? (
@@ -153,12 +148,13 @@ export default async function StudentPage({
                 <form action={deleteLesson}>
                   <input type="hidden" name="id" value={l.id} />
                   <input type="hidden" name="student_id" value={details.id} />
-                  <button
-                    type="submit"
+                  <SubmitButton
+                    danger
+                    pendingText="…"
                     className="rounded px-2 py-1 text-xs text-danger transition-colors hover:bg-danger/10"
                   >
                     Удалить
-                  </button>
+                  </SubmitButton>
                 </form>
               </li>
             ))
@@ -171,7 +167,12 @@ export default async function StudentPage({
         <h2 className="text-lg font-semibold tracking-tight">
           Комментарии (раз в месяц)
         </h2>
-        <form action={addComment} className="mt-4 space-y-3">
+        <ActionForm
+          action={addComment}
+          resetOnSuccess
+          successText="Комментарий добавлен"
+          className="mt-4"
+        >
           <input type="hidden" name="student_id" value={details.id} />
           <textarea
             name="body"
@@ -180,13 +181,12 @@ export default async function StudentPage({
             placeholder="Как продвигается ученик за прошедший месяц…"
             className={`${inputClass} resize-y`}
           />
-          <button
-            type="submit"
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
-          >
-            Добавить комментарий
-          </button>
-        </form>
+          <div className="mt-3">
+            <SubmitButton pendingText="Добавляем…">
+              Добавить комментарий
+            </SubmitButton>
+          </div>
+        </ActionForm>
 
         <ul className="mt-5 space-y-4">
           {details.comments.length === 0 ? (
@@ -201,12 +201,13 @@ export default async function StudentPage({
                   <form action={deleteComment}>
                     <input type="hidden" name="id" value={c.id} />
                     <input type="hidden" name="student_id" value={details.id} />
-                    <button
-                      type="submit"
+                    <SubmitButton
+                      danger
+                      pendingText="…"
                       className="rounded px-2 py-0.5 text-xs text-danger transition-colors hover:bg-danger/10"
                     >
                       Удалить
-                    </button>
+                    </SubmitButton>
                   </form>
                 </div>
                 <p className="mt-1 whitespace-pre-line text-sm">{c.body}</p>
@@ -248,12 +249,13 @@ export default async function StudentPage({
         </p>
         <form action={deleteStudent} className="mt-3">
           <input type="hidden" name="id" value={details.id} />
-          <button
-            type="submit"
+          <SubmitButton
+            danger
+            pendingText="Удаляем…"
             className="rounded-lg border border-danger/40 px-4 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger/10"
           >
             Удалить ученика
-          </button>
+          </SubmitButton>
         </form>
       </section>
     </div>

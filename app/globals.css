@@ -173,8 +173,10 @@ kbd {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  /* Фирменную прорисовку графика оставляем даже при «уменьшении движения»:
+     это короткий разовый эффект (не зацикленный, без резких движений). */
   .hero-logo .curve {
-    stroke-dashoffset: 0;
+    animation: draw 1.8s ease forwards 0.3s !important;
   }
   .animate-fade-up {
     opacity: 1;

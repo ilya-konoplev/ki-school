@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { saveTexts, setPublicExamDate } from "@/app/admin/actions";
+import { ActionForm } from "@/components/admin/ActionForm";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import { textFields } from "@/lib/content/texts";
 import { getPublicExamDate, getTexts } from "@/lib/site-data";
 
@@ -33,24 +35,18 @@ export default async function AdminTextsPage() {
         <p className="mt-1 text-sm text-muted">
           Используется в блоке «До экзамена осталось…» на главной (для гостей).
         </p>
-        <form
-          action={setPublicExamDate}
-          className="mt-4 flex flex-wrap items-end gap-3"
-        >
-          <input
-            type="date"
-            name="public_exam_date"
-            defaultValue={examDate}
-            required
-            className={`${inputClass} max-w-xs`}
-          />
-          <button
-            type="submit"
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
-          >
-            Сохранить дату
-          </button>
-        </form>
+        <ActionForm action={setPublicExamDate} successText="Дата сохранена" className="mt-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <input
+              type="date"
+              name="public_exam_date"
+              defaultValue={examDate}
+              required
+              className={`${inputClass} max-w-xs`}
+            />
+            <SubmitButton>Сохранить дату</SubmitButton>
+          </div>
+        </ActionForm>
       </section>
 
       {/* Тексты страниц */}
@@ -58,7 +54,7 @@ export default async function AdminTextsPage() {
         <h2 className="text-base font-semibold tracking-tight">
           Тексты страниц
         </h2>
-        <form action={saveTexts} className="mt-4 space-y-4">
+        <ActionForm action={saveTexts} successText="Тексты сохранены" className="mt-4 space-y-4">
           {textFields.map((field) => (
             <div key={field.key}>
               <label
@@ -88,13 +84,10 @@ export default async function AdminTextsPage() {
               )}
             </div>
           ))}
-          <button
-            type="submit"
-            className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
-          >
+          <SubmitButton className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover">
             Сохранить тексты
-          </button>
-        </form>
+          </SubmitButton>
+        </ActionForm>
       </section>
     </div>
   );

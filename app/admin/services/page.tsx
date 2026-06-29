@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { deleteService, saveService } from "@/app/admin/actions";
+import { ActionForm } from "@/components/admin/ActionForm";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import { listServicesAdmin, type AdminService } from "@/lib/admin";
 
 export const metadata: Metadata = { title: "Услуги" };
@@ -27,25 +29,22 @@ export default async function AdminServicesPage() {
           key={s.id}
           className="rounded-2xl border border-border bg-surface p-6"
         >
-          <ServiceFields service={s} />
-          <div className="mt-4 flex items-center gap-2">
-            <button
-              type="submit"
-              form={`service-${s.id}`}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
+          <ActionForm action={saveService}>
+            <ServiceFields service={s} />
+            <div className="mt-4">
+              <SubmitButton>Сохранить</SubmitButton>
+            </div>
+          </ActionForm>
+          <form action={deleteService} className="mt-2">
+            <input type="hidden" name="id" value={s.id} />
+            <SubmitButton
+              danger
+              pendingText="Удаляем…"
+              className="rounded-lg px-3 py-2 text-sm text-danger transition-colors hover:bg-danger/10"
             >
-              Сохранить
-            </button>
-            <form action={deleteService}>
-              <input type="hidden" name="id" value={s.id} />
-              <button
-                type="submit"
-                className="rounded-lg px-3 py-2 text-sm text-danger transition-colors hover:bg-danger/10"
-              >
-                Удалить
-              </button>
-            </form>
-          </div>
+              Удалить услугу
+            </SubmitButton>
+          </form>
         </div>
       ))}
 
@@ -53,26 +52,21 @@ export default async function AdminServicesPage() {
         <h2 className="mb-3 text-base font-semibold tracking-tight">
           Новая услуга
         </h2>
-        <ServiceFields />
-        <div className="mt-4">
-          <button
-            type="submit"
-            form="service-new"
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
-          >
-            Добавить услугу
-          </button>
-        </div>
+        <ActionForm action={saveService} successText="Услуга добавлена" resetOnSuccess>
+          <ServiceFields />
+          <div className="mt-4">
+            <SubmitButton pendingText="Добавляем…">Добавить услугу</SubmitButton>
+          </div>
+        </ActionForm>
       </div>
     </div>
   );
 }
 
-/** Поля формы услуги. Кнопки вынесены наружу и связаны через form="...". */
+/** Поля услуги (без своей формы — оборачиваются в ActionForm). */
 function ServiceFields({ service }: { service?: AdminService }) {
-  const formId = service ? `service-${service.id}` : "service-new";
   return (
-    <form id={formId} action={saveService}>
+    <>
       {service && <input type="hidden" name="id" value={service.id} />}
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
@@ -125,6 +119,6 @@ function ServiceFields({ service }: { service?: AdminService }) {
           className={`${inputClass} resize-y`}
         />
       </div>
-    </form>
+    </>
   );
 }

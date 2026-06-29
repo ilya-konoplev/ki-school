@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { deleteReview, saveReview } from "@/app/admin/actions";
+import { ActionForm } from "@/components/admin/ActionForm";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import { listReviewsAdmin, type AdminReview } from "@/lib/admin";
 
 export const metadata: Metadata = { title: "Отзывы" };
@@ -26,25 +28,22 @@ export default async function AdminReviewsPage() {
           key={r.id}
           className="rounded-2xl border border-border bg-surface p-6"
         >
-          <ReviewFields review={r} />
-          <div className="mt-4 flex items-center gap-2">
-            <button
-              type="submit"
-              form={`review-${r.id}`}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
+          <ActionForm action={saveReview}>
+            <ReviewFields review={r} />
+            <div className="mt-4">
+              <SubmitButton>Сохранить</SubmitButton>
+            </div>
+          </ActionForm>
+          <form action={deleteReview} className="mt-2">
+            <input type="hidden" name="id" value={r.id} />
+            <SubmitButton
+              danger
+              pendingText="Удаляем…"
+              className="rounded-lg px-3 py-2 text-sm text-danger transition-colors hover:bg-danger/10"
             >
-              Сохранить
-            </button>
-            <form action={deleteReview}>
-              <input type="hidden" name="id" value={r.id} />
-              <button
-                type="submit"
-                className="rounded-lg px-3 py-2 text-sm text-danger transition-colors hover:bg-danger/10"
-              >
-                Удалить
-              </button>
-            </form>
-          </div>
+              Удалить отзыв
+            </SubmitButton>
+          </form>
         </div>
       ))}
 
@@ -52,25 +51,21 @@ export default async function AdminReviewsPage() {
         <h2 className="mb-3 text-base font-semibold tracking-tight">
           Новый отзыв
         </h2>
-        <ReviewFields />
-        <div className="mt-4">
-          <button
-            type="submit"
-            form="review-new"
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
-          >
-            Добавить отзыв
-          </button>
-        </div>
+        <ActionForm action={saveReview} successText="Отзыв добавлен" resetOnSuccess>
+          <ReviewFields />
+          <div className="mt-4">
+            <SubmitButton pendingText="Добавляем…">Добавить отзыв</SubmitButton>
+          </div>
+        </ActionForm>
       </div>
     </div>
   );
 }
 
+/** Поля отзыва (без своей формы — оборачиваются в ActionForm). */
 function ReviewFields({ review }: { review?: AdminReview }) {
-  const formId = review ? `review-${review.id}` : "review-new";
   return (
-    <form id={formId} action={saveReview}>
+    <>
       {review && <input type="hidden" name="id" value={review.id} />}
       <div className="grid gap-3 sm:grid-cols-3">
         <div>
@@ -125,6 +120,6 @@ function ReviewFields({ review }: { review?: AdminReview }) {
           className={`${inputClass} resize-y`}
         />
       </div>
-    </form>
+    </>
   );
 }
