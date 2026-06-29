@@ -1,10 +1,11 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Математический маятник</title>
     <style>
+      /* Светлая тема (по умолчанию) */
       :root {
         --accent: #9974f7;
         --bg: #ffffff;
@@ -13,14 +14,14 @@
         --surface: #f6f6f8;
         --border: #e6e6ec;
       }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg: #181820;
-          --fg: #e4e4ec;
-          --muted: #9a9aab;
-          --surface: #20202a;
-          --border: #2c2c37;
-        }
+      /* Тёмная тема — включается атрибутом data-theme="dark" на <html>,
+         который выставляет сайт (см. синхронизацию внизу). */
+      [data-theme="dark"] {
+        --bg: #181820;
+        --fg: #e4e4ec;
+        --muted: #9a9aab;
+        --surface: #20202a;
+        --border: #2c2c37;
       }
       * { box-sizing: border-box; }
       html, body { margin: 0; height: 100%; }
@@ -32,6 +33,7 @@
         flex-direction: column;
         gap: 12px;
         padding: 16px;
+        transition: background 0.3s ease, color 0.3s ease;
       }
       canvas {
         width: 100%;
@@ -40,6 +42,7 @@
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 12px;
+        transition: background 0.3s ease, border-color 0.3s ease;
       }
       .controls {
         display: flex;
@@ -50,10 +53,7 @@
       label { font-size: 14px; color: var(--muted); }
       input[type="range"] { accent-color: var(--accent); vertical-align: middle; }
       .value { color: var(--fg); font-weight: 600; }
-      .readout {
-        font-size: 14px;
-        color: var(--muted);
-      }
+      .readout { font-size: 14px; color: var(--muted); }
       .readout b { color: var(--accent); }
     </style>
   </head>
@@ -69,7 +69,25 @@
         Период <b>T = 2π·√(L/g)</b> ≈ <span id="period">2.01</span> с
       </div>
     </div>
+
     <script>
+      // ─── Синхронизация темы с сайтом ───
+      // Начальная тема приходит в адресе (?theme=light|dark),
+      // переключение — сообщением postMessage от сайта.
+      (function () {
+        const params = new URLSearchParams(location.search);
+        document.documentElement.setAttribute(
+          "data-theme",
+          params.get("theme") || "light",
+        );
+        window.addEventListener("message", (e) => {
+          if (e.data && e.data.type === "theme") {
+            document.documentElement.setAttribute("data-theme", e.data.value);
+          }
+        });
+      })();
+
+      // ─── Модель маятника ───
       const canvas = document.getElementById("c");
       const ctx = canvas.getContext("2d");
       const lenInput = document.getElementById("len");
@@ -77,13 +95,15 @@
       const periodEl = document.getElementById("period");
       const g = 9.81;
       let L = parseFloat(lenInput.value);
-      const theta0 = 0.5; // начальный угол, рад
-      let start = performance.now();
+      const theta0 = 0.5;
+      const start = performance.now();
 
       function accentColor() {
-        return getComputedStyle(document.documentElement)
-          .getPropertyValue("--accent")
-          .trim() || "#9974f7";
+        return (
+          getComputedStyle(document.documentElement)
+            .getPropertyValue("--accent")
+            .trim() || "#9974f7"
+        );
       }
 
       function resize() {
@@ -97,8 +117,7 @@
       function update() {
         L = parseFloat(lenInput.value);
         lenVal.textContent = L.toFixed(2);
-        const T = 2 * Math.PI * Math.sqrt(L / g);
-        periodEl.textContent = T.toFixed(2);
+        periodEl.textContent = (2 * Math.PI * Math.sqrt(L / g)).toFixed(2);
       }
       lenInput.addEventListener("input", update);
 
@@ -124,8 +143,7 @@
         ctx.lineTo(bobX, bobY);
         ctx.stroke();
 
-        const accent = accentColor();
-        ctx.fillStyle = accent;
+        ctx.fillStyle = accentColor();
         ctx.beginPath();
         ctx.arc(bobX, bobY, 16, 0, Math.PI * 2);
         ctx.fill();

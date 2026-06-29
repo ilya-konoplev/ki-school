@@ -62,6 +62,50 @@
 
 ---
 
+## Светлая и тёмная тема в лабе
+
+Лаба — отдельная страница внутри окна (iframe), поэтому она **не видит** тему
+сайта автоматически. Сайт передаёт тему лабе двумя способами:
+
+1. при открытии — в адресе: `...?theme=light` или `...?theme=dark`;
+2. при переключении на сайте — сообщением `postMessage` (без перезагрузки).
+
+Чтобы лаба следовала теме сайта, сделай в ней две вещи.
+
+**1. Опиши цвета через CSS-переменные** — отдельно для светлой и тёмной:
+
+```css
+:root {
+  --bg: #ffffff; --fg: #23232b; --surface: #f6f6f8;
+  --border: #e6e6ec; --accent: #9974f7;
+}
+[data-theme="dark"] {
+  --bg: #181820; --fg: #e4e4ec; --surface: #20202a;
+  --border: #2c2c37; --accent: #9974f7;
+}
+body { background: var(--bg); color: var(--fg); }
+```
+
+**2. Вставь этот скрипт** (он включает нужную тему по сигналу сайта):
+
+```html
+<script>
+  (function () {
+    var p = new URLSearchParams(location.search);
+    document.documentElement.setAttribute("data-theme", p.get("theme") || "light");
+    window.addEventListener("message", function (e) {
+      if (e.data && e.data.type === "theme") {
+        document.documentElement.setAttribute("data-theme", e.data.value);
+      }
+    });
+  })();
+</script>
+```
+
+Всё: используй в стилях `var(--bg)`, `var(--fg)` и т.д. — лаба будет светлой
+или тёмной вместе с сайтом. Фирменный цвет — `#9974f7`. Готовые образцы:
+`public/labs/pendulum/index.html` и `public/labs/atom/index.html`.
+
 ## Советы
 
 - Лаба должна работать «сама по себе»: всё нужное – внутри её папки, без ссылок

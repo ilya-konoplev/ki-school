@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { LabFrame } from "@/components/materials/LabFrame";
 import { Container } from "@/components/ui/Container";
 import { getLab, labs } from "@/lib/content/labs";
 
@@ -47,13 +48,7 @@ export default async function LabViewerPage({
       <p className="mt-3 max-w-2xl text-muted">{lab.description}</p>
 
       <div className="mt-8 overflow-hidden rounded-2xl border border-border bg-surface">
-        <iframe
-          src={lab.src}
-          title={lab.title}
-          className="h-[70vh] min-h-[460px] w-full"
-          sandbox="allow-scripts allow-same-origin"
-          loading="lazy"
-        />
+        <LabFrame src={lab.src} title={lab.title} />
       </div>
 
       <div className="mt-6">
