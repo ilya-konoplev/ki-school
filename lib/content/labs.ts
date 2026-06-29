@@ -28,6 +28,13 @@ export const labs: Lab[] = [
   src: "/labs/atom/index.html",
   topicSlug: "rutherford-atom",
 },
+{
+  slug: "diffusion",
+  title: "Диффузия тел",
+  description: "Меняйте количество вещества и интенсивность диффузии",
+  src: "/labs/diffusion/index.html",
+  topicSlug: "diffusion-brownian",
+},
 ];
 
 export function getLab(slug: string): Lab | undefined {
