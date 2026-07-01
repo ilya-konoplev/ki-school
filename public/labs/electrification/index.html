@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Заряженные шарики</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF8FF;
+  --surface:#FFFFFF;
+  --surface-2:#F4F0FC;
+  --text:#221C2E;
+  --text-secondary:#5C5468;
+  --text-muted:#8E84A3;
+  --border:#E6E1F2;
+  --accent:#9974F7;
+  --heat:#F2683C;
+  --heat-soft:#FBE0D3;
+
+  --radius:14px;
+  --font-display:'Fraunces','Iowan Old Style',Georgia,serif;
+  --font-body:'Inter',-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+[data-theme="dark"]{
+  --bg:#15131C;
+  --surface:#1D1A26;
+  --surface-2:#241F30;
+  --text:#ECE8F7;
+  --text-secondary:#A89FC2;
+  --text-muted:#766C90;
+  --border:#2E293D;
+  --accent:#9974F7;
+  --heat:#FF7D4D;
+  --heat-soft:#3A241C;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  padding:20px;
+  transition:background .3s ease,color .3s ease;
+}
+.wrap{width:100%;}
+
+.stage{
+  position:relative;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+  transition:background .3s ease,border-color .3s ease;
+}
+.stage canvas{display:block;width:100%;height:360px;touch-action:none;}
+
+.note{
+  font-size:12px; color:var(--text-muted); margin:10px 2px 0; line-height:1.5;
+}
+
+.panel{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px; margin-top:16px; transition:background .3s ease,border-color .3s ease;}
+
+.control-row{display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+.control-row label{font-size:13px; color:var(--text-secondary); width:150px; flex-shrink:0;}
+.control-row input[type=range]{min-width:120px;}
+
+.readouts-row{display:flex; gap:24px; flex-wrap:wrap; margin-top:14px; padding-top:14px; border-top:1px solid var(--border);}
+
+.actions{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;}
+
+@media(max-width:420px){
+  .control-row label{width:100%;}
+  .control-row .value-readout{width:100%; text-align:left;}
+}
+
+input[type=range]{
+  -webkit-appearance:none; flex:1; height:4px;
+  background:var(--surface-2); border-radius:4px; outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+  background:var(--accent); cursor:pointer;
+}
+input[type=range]::-moz-range-thumb{
+  width:16px; height:16px; border-radius:50%; border:none;
+  background:var(--accent); cursor:pointer;
+}
+
+.value-readout{font-family:var(--font-mono); font-size:13px; color:var(--text-secondary); white-space:nowrap;}
+.value-readout b{color:var(--text); font-weight:500;}
+
+.btn-primary{background:var(--accent); color:var(--bg); padding:10px 18px; border:none; border-radius:9px; font-family:var(--font-body); font-weight:500; font-size:13px; cursor:pointer;}
+.btn-secondary{background:none; border:1px solid var(--border); color:var(--text); padding:10px 18px; border-radius:9px; font-family:var(--font-body); font-weight:500; font-size:13px; cursor:pointer;}
+.btn-secondary:hover{border-color:var(--accent); color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage">
+    <canvas id="scene"></canvas>
+  </div>
+  <p class="note">Кликните «Добавить шарик», перетаскивайте шарики мышью. При соприкосновении их заряды перераспределяются.</p>
+
+  <div class="panel">
+    <div class="control-row">
+      <label id="sliderLabel">Заряд нового шарика</label>
+      <input type="range" id="chargeSlider" min="-10" max="10" step="1" value="6">
+      <span class="value-readout"><b id="chargeVal">+6</b></span>
+    </div>
+
+    <div class="readouts-row">
+      <span class="value-readout">Суммарный заряд: <b id="totalVal">0</b></span>
+      <span class="value-readout">Шариков: <b id="countVal">0</b></span>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" id="addBtn">Добавить шарик</button>
+      <button class="btn-secondary" id="resetBtn">Сбросить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  document.documentElement.setAttribute('data-theme', params.get('theme') || 'light');
+
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'theme') {
+      document.documentElement.setAttribute('data-theme', e.data.value);
+      refreshColors();
+    }
+  });
+})();
+
+var canvas = document.getElementById('scene');
+var ctx = canvas.getContext('2d');
+var stage = document.querySelector('.stage');
+
+var chargeSlider = document.getElementById('chargeSlider');
+var chargeVal = document.getElementById('chargeVal');
+var sliderLabel = document.getElementById('sliderLabel');
+var totalVal = document.getElementById('totalVal');
+var countVal = document.getElementById('countVal');
+var addBtn = document.getElementById('addBtn');
+var resetBtn = document.getElementById('resetBtn');
+
+var W = 0, H = 0, dpr = 1;
+var BALL_R = 24;
+var MAX_BALLS = 20;
+
+var balls = [];
+var sparks = [];
+var selectedIndex = -1;
+var dragIndex = -1;
+var dragOffsetX = 0, dragOffsetY = 0;
+var dragMoved = false;
+var downX = 0, downY = 0;
+var lastTime = null;
+
+var colors = {};
+
+function hexToRgb(hex) {
+  hex = hex.trim().replace('#', '');
+  return [
+    parseInt(hex.substring(0, 2), 16),
+    parseInt(hex.substring(2, 4), 16),
+    parseInt(hex.substring(4, 6), 16)
+  ];
+}
+function lerp(a, b, t) { return a + (b - a) * t; }
+function lerpColor(c1, c2, t) {
+  return 'rgb(' +
+    Math.round(lerp(c1[0], c2[0], t)) + ',' +
+    Math.round(lerp(c1[1], c2[1], t)) + ',' +
+    Math.round(lerp(c1[2], c2[2], t)) + ')';
+}
+function rand(min, max) { return min + Math.random() * (max - min); }
+
+function refreshColors() {
+  var cs = getComputedStyle(document.documentElement);
+  colors.surface = cs.getPropertyValue('--surface').trim();
+  colors.surface2 = cs.getPropertyValue('--surface-2').trim();
+  colors.border = cs.getPropertyValue('--border').trim();
+  colors.text = cs.getPropertyValue('--text').trim();
+  colors.textSecondary = cs.getPropertyValue('--text-secondary').trim();
+  colors.accent = cs.getPropertyValue('--accent').trim();
+  colors.bg = cs.getPropertyValue('--bg').trim();
+
+  colors.surface2Rgb = hexToRgb(colors.surface2);
+  colors.accentRgb = hexToRgb(colors.accent);
+}
+
+function layout() {
+  var rect = stage.getBoundingClientRect();
+  dpr = window.devicePixelRatio || 1;
+  W = rect.width;
+  H = 360;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  for (var i = 0; i < balls.length; i++) clampBall(balls[i]);
+}
+
+function clampBall(b) {
+  b.x = Math.max(b.r, Math.min(W - b.r, b.x));
+  b.y = Math.max(b.r, Math.min(H - b.r, b.y));
+}
+
+function formatCharge(q) {
+  var r = Math.round(q * 10) / 10;
+  return (r > 0 ? '+' : '') + r;
+}
+
+function overlapsAny(x, y, r) {
+  for (var i = 0; i < balls.length; i++) {
+    var b = balls[i];
+    if (Math.hypot(x - b.x, y - b.y) < (r + b.r) * 1.15) return true;
+  }
+  return false;
+}
+
+function addBall(charge, x, y) {
+  if (balls.length >= MAX_BALLS) return;
+  var px = x, py = y, tries = 0;
+  if (px === undefined) {
+    do {
+      px = rand(BALL_R + 4, W - BALL_R - 4);
+      py = rand(BALL_R + 4, H - BALL_R - 4);
+      tries++;
+    } while (tries < 20 && overlapsAny(px, py, BALL_R));
+  }
+  balls.push({ x: px, y: py, r: BALL_R, charge: charge });
+  selectedIndex = balls.length - 1;
+  updateSliderFromSelection();
+  updateReadouts();
+}
+
+function spawnSpark(x, y) {
+  sparks.push({ x: x, y: y, life: 1 });
+}
+
+function resolveOverlaps() {
+  for (var i = 0; i < balls.length; i++) {
+    for (var j = i + 1; j < balls.length; j++) {
+      var bi = balls[i], bj = balls[j];
+      var dx = bj.x - bi.x, dy = bj.y - bi.y;
+      var dist = Math.hypot(dx, dy) || 0.0001;
+      var minDist = bi.r + bj.r;
+      if (dist < minDist) {
+        if (Math.abs(bi.charge - bj.charge) > 0.001) {
+          spawnSpark((bi.x + bj.x) / 2, (bi.y + bj.y) / 2);
+          var avg = (bi.charge + bj.charge) / 2;
+          bi.charge = avg;
+          bj.charge = avg;
+          if (i === selectedIndex || j === selectedIndex) updateSliderFromSelection();
+        }
+        var overlap = minDist - dist;
+        var nx = dx / dist, ny = dy / dist;
+        if (i === dragIndex) {
+          bj.x += nx * overlap; bj.y += ny * overlap;
+        } else if (j === dragIndex) {
+          bi.x -= nx * overlap; bi.y -= ny * overlap;
+        } else {
+          bi.x -= nx * overlap / 2; bi.y -= ny * overlap / 2;
+          bj.x += nx * overlap / 2; bj.y += ny * overlap / 2;
+        }
+        clampBall(bi); clampBall(bj);
+      }
+    }
+  }
+}
+
+function updateSliderFromSelection() {
+  if (selectedIndex >= 0 && balls[selectedIndex]) {
+    sliderLabel.textContent = 'Заряд шарика';
+    chargeSlider.value = balls[selectedIndex].charge;
+  } else {
+    sliderLabel.textContent = 'Заряд нового шарика';
+  }
+  chargeVal.textContent = formatCharge(parseInt(chargeSlider.value, 10));
+}
+
+function updateReadouts() {
+  var total = 0;
+  for (var i = 0; i < balls.length; i++) total += balls[i].charge;
+  totalVal.textContent = formatCharge(Math.round(total * 10) / 10);
+  countVal.textContent = balls.length;
+}
+
+function ballIndexAt(x, y) {
+  for (var i = balls.length - 1; i >= 0; i--) {
+    if (Math.hypot(x - balls[i].x, y - balls[i].y) <= balls[i].r) return i;
+  }
+  return -1;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = colors.surface;
+  ctx.fillRect(0, 0, W, H);
+
+  for (var i = 0; i < balls.length; i++) {
+    var b = balls[i];
+    var t = Math.min(1, Math.abs(b.charge) / 10);
+    var fill = lerpColor(colors.surface2Rgb, colors.accentRgb, t);
+
+    if (i === selectedIndex) {
+      ctx.beginPath();
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = colors.textSecondary;
+      ctx.lineWidth = 2;
+      ctx.arc(b.x, b.y, b.r + 6, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    ctx.beginPath();
+    ctx.fillStyle = fill;
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = colors.border;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = t > 0.55 ? colors.bg : colors.text;
+    ctx.font = '600 12px ' + getComputedStyle(document.documentElement).getPropertyValue('--font-mono');
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(formatCharge(b.charge), b.x, b.y + 1);
+  }
+
+  for (var s = sparks.length - 1; s >= 0; s--) {
+    var sp = sparks[s];
+    ctx.beginPath();
+    ctx.fillStyle = colors.accent;
+    ctx.globalAlpha = sp.life * 0.8;
+    ctx.arc(sp.x, sp.y, 6 + (1 - sp.life) * 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function frame(t) {
+  if (lastTime === null) lastTime = t;
+  var dt = Math.min((t - lastTime) / 1000, 0.05);
+  lastTime = t;
+
+  resolveOverlaps();
+
+  var decay = Math.exp(-dt / 0.28);
+  for (var i = sparks.length - 1; i >= 0; i--) {
+    sparks[i].life *= decay;
+    if (sparks[i].life < 0.03) sparks.splice(i, 1);
+  }
+
+  draw();
+  requestAnimationFrame(frame);
+}
+
+function getPos(e) {
+  var rect = canvas.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+canvas.addEventListener('pointerdown', function (e) {
+  var p = getPos(e);
+  downX = p.x; downY = p.y;
+  dragMoved = false;
+  var idx = ballIndexAt(p.x, p.y);
+  if (idx >= 0) {
+    dragIndex = idx;
+    dragOffsetX = balls[idx].x - p.x;
+    dragOffsetY = balls[idx].y - p.y;
+    canvas.setPointerCapture(e.pointerId);
+  }
+});
+
+canvas.addEventListener('pointermove', function (e) {
+  var p = getPos(e);
+  if (dragIndex < 0) return;
+  if (!dragMoved && Math.hypot(p.x - downX, p.y - downY) > 4) dragMoved = true;
+  if (dragMoved) {
+    balls[dragIndex].x = p.x + dragOffsetX;
+    balls[dragIndex].y = p.y + dragOffsetY;
+    clampBall(balls[dragIndex]);
+  }
+});
+
+window.addEventListener('pointerup', function () {
+  if (dragIndex >= 0) {
+    if (!dragMoved) {
+      selectedIndex = dragIndex;
+      updateSliderFromSelection();
+    } else {
+      selectedIndex = dragIndex;
+      updateSliderFromSelection();
+    }
+  } else if (!dragMoved) {
+    selectedIndex = -1;
+    updateSliderFromSelection();
+  }
+  dragIndex = -1;
+});
+
+chargeSlider.addEventListener('input', function () {
+  var v = parseInt(chargeSlider.value, 10);
+  chargeVal.textContent = formatCharge(v);
+  if (selectedIndex >= 0 && balls[selectedIndex]) {
+    balls[selectedIndex].charge = v;
+    updateReadouts();
+  }
+});
+
+addBtn.addEventListener('click', function () {
+  addBall(parseInt(chargeSlider.value, 10));
+});
+
+resetBtn.addEventListener('click', function () {
+  balls = [];
+  sparks = [];
+  selectedIndex = -1;
+  updateSliderFromSelection();
+  updateReadouts();
+});
+
+var ro = new ResizeObserver(function () { layout(); });
+ro.observe(stage);
+
+refreshColors();
+layout();
+addBall(6);
+addBall(-4);
+selectedIndex = -1;
+updateSliderFromSelection();
+updateReadouts();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

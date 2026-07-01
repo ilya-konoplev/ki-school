@@ -42,6 +42,13 @@ export const labs: Lab[] = [
   src: "/labs/resistor/index.html",
   topicSlug: "current-basics",
 },
+{
+  slug: "electrification",
+  title: "Закон сохранения заряда",
+  description: "При соприкосновении двух одинаковых шариков, которые проводят электричество, заряд между ними будет распределяться равномерно.",
+  src: "/labs/electrification/index.html",
+  topicSlug: "electrification",
+},
 ];
 
 export function getLab(slug: string): Lab | undefined {
