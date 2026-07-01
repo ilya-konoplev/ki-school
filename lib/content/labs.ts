@@ -17,7 +17,7 @@ export const labs: Lab[] = [
     slug: "pendulum",
     title: "Математический маятник",
     description:
-      "Интерактивная модель: меняйте длину нити и наблюдайте, как изменяется период колебаний.",
+      "Меняйте длину нити и наблюдайте, как изменяется период колебаний.",
     src: "/labs/pendulum/index.html",
     topicSlug: "mechanical-oscillations",
   },
