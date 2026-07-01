@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Резистор на микроуровне</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF8FF;
+  --surface:#FFFFFF;
+  --surface-2:#F4F0FC;
+  --text:#221C2E;
+  --text-secondary:#5C5468;
+  --text-muted:#8E84A3;
+  --border:#E6E1F2;
+  --accent:#9974F7;
+  --heat:#F2683C;
+  --heat-soft:#FBE0D3;
+
+  --radius:14px;
+  --font-display:'Fraunces','Iowan Old Style',Georgia,serif;
+  --font-body:'Inter',-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+[data-theme="dark"]{
+  --bg:#15131C;
+  --surface:#1D1A26;
+  --surface-2:#241F30;
+  --text:#ECE8F7;
+  --text-secondary:#A89FC2;
+  --text-muted:#766C90;
+  --border:#2E293D;
+  --accent:#9974F7;
+  --heat:#FF7D4D;
+  --heat-soft:#3A241C;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  padding:20px;
+  transition:background .3s ease,color .3s ease;
+}
+.wrap{width:100%;}
+
+.stage{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+  transition:background .3s ease,border-color .3s ease;
+}
+.stage canvas{display:block;width:100%;height:340px;}
+
+.panel{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px; margin-top:16px; transition:background .3s ease,border-color .3s ease;}
+
+.controls{display:grid; grid-template-columns:1fr 1fr; gap:22px 28px;}
+@media(max-width:560px){ .controls{grid-template-columns:1fr;} }
+
+.control-head{
+  display:flex; justify-content:space-between; align-items:baseline;
+  margin-bottom:10px; font-size:13px; color:var(--text-secondary);
+}
+
+input[type=range]{
+  -webkit-appearance:none; width:100%; height:4px;
+  background:var(--surface-2); border-radius:4px; outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+  background:var(--accent); cursor:pointer;
+}
+input[type=range]::-moz-range-thumb{
+  width:16px; height:16px; border-radius:50%; border:none;
+  background:var(--accent); cursor:pointer;
+}
+
+.value-readout{font-family:var(--font-mono); font-size:13px; color:var(--text-secondary);}
+.value-readout b{color:var(--text); font-weight:500;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage">
+    <canvas id="scene"></canvas>
+  </div>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="control">
+        <div class="control-head">
+          <span>Сопротивление</span>
+          <span class="value-readout"><b id="rVal">40</b> Ом</span>
+        </div>
+        <input type="range" id="rSlider" min="1" max="10" step="1" value="4">
+      </div>
+
+      <div class="control">
+        <div class="control-head">
+          <span>Напряжение</span>
+          <span class="value-readout"><b id="uVal">4</b> В</span>
+        </div>
+        <input type="range" id="uSlider" min="1" max="10" step="1" value="4">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  document.documentElement.setAttribute('data-theme', params.get('theme') || 'light');
+
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'theme') {
+      document.documentElement.setAttribute('data-theme', e.data.value);
+      refreshColors();
+    }
+  });
+})();
+
+var canvas = document.getElementById('scene');
+var ctx = canvas.getContext('2d');
+var stage = document.querySelector('.stage');
+
+var rSlider = document.getElementById('rSlider');
+var uSlider = document.getElementById('uSlider');
+var rVal = document.getElementById('rVal');
+var uVal = document.getElementById('uVal');
+
+var W = 0, H = 0, dpr = 1;
+var boxLeft, boxTop, boxW, boxH, wireY, wireThickness;
+var atoms = [];
+var electrons = [];
+var lastSpawn = 0;
+var lastTime = null;
+
+var colors = {};
+
+function hexToRgb(hex) {
+  hex = hex.trim().replace('#', '');
+  var r = parseInt(hex.substring(0, 2), 16);
+  var g = parseInt(hex.substring(2, 4), 16);
+  var b = parseInt(hex.substring(4, 6), 16);
+  return [r, g, b];
+}
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function lerpColor(c1, c2, t) {
+  return 'rgb(' +
+    Math.round(lerp(c1[0], c2[0], t)) + ',' +
+    Math.round(lerp(c1[1], c2[1], t)) + ',' +
+    Math.round(lerp(c1[2], c2[2], t)) + ')';
+}
+
+function refreshColors() {
+  var cs = getComputedStyle(document.documentElement);
+  colors.surface = cs.getPropertyValue('--surface').trim();
+  colors.surface2 = cs.getPropertyValue('--surface-2').trim();
+  colors.border = cs.getPropertyValue('--border').trim();
+  colors.textMuted = cs.getPropertyValue('--text-muted').trim();
+  colors.accent = cs.getPropertyValue('--accent').trim();
+  colors.heat = cs.getPropertyValue('--heat').trim();
+  colors.heatSoft = cs.getPropertyValue('--heat-soft').trim();
+
+  colors.textMutedRgb = hexToRgb(colors.textMuted);
+  colors.heatRgb = hexToRgb(colors.heat);
+  colors.heatSoftRgb = hexToRgb(colors.heatSoft);
+}
+
+function atomCountFromLevel(level) {
+  return Math.round(6 + (level - 1) * (42 - 6) / 9);
+}
+
+function regenerateAtoms() {
+  var level = parseInt(rSlider.value, 10);
+  var N = atomCountFromLevel(level);
+  var pad = atomR * 1.1;
+  var availW = boxW - pad * 2;
+  var availH = boxH - pad * 2;
+  var aspect = availW / availH;
+
+  // rows форсированно нечётные: средний ряд ложится точно на линию
+  // провода (box всегда центрирован на wireY), поэтому при любом
+  // сопротивлении гарантирован хотя бы один ряд препятствий на пути электрона
+  var rows = Math.max(1, Math.round(Math.sqrt(N / aspect)));
+  if (rows % 2 === 0) rows += 1;
+  var cols = Math.max(1, Math.round(N / rows));
+
+  var cellW = availW / cols;
+  var cellH = availH / rows;
+  var maxVJitter = Math.min(cellH * 0.2, atomR * 0.6);
+
+  atoms = [];
+  for (var r = 0; r < rows; r++) {
+    var rowOffset = (r % 2 === 1) ? cellW / 2 : 0;
+    for (var c = 0; c < cols; c++) {
+      var jitterX = (Math.random() - 0.5) * cellW * 0.25;
+      var jitterY = (Math.random() - 0.5) * maxVJitter;
+      var x = boxLeft + pad + rowOffset + cellW * (c + 0.5) + jitterX;
+      var y = boxTop + pad + cellH * (r + 0.5) + jitterY;
+      atoms.push({ x: x, y: y, heat: 0 });
+    }
+  }
+}
+
+function layout() {
+  var rect = stage.getBoundingClientRect();
+  dpr = window.devicePixelRatio || 1;
+  W = rect.width;
+  H = 340;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  wireY = H / 2;
+  boxW = Math.min(W * 0.6, 460);
+  boxH = H * 0.44;
+  boxLeft = W / 2 - boxW / 2;
+  boxTop = H / 2 - boxH / 2;
+  wireThickness = Math.max(12, boxH * 0.14);
+
+  regenerateAtoms();
+}
+
+function uValue() { return parseInt(uSlider.value, 10); }
+function rValue() { return parseInt(rSlider.value, 10) * 10; }
+
+function updateReadouts() {
+  rVal.textContent = rValue();
+  uVal.textContent = uValue();
+}
+
+var electronR = 3;
+var atomR = 7;
+
+function spawnElectron() {
+  var u = uValue();
+  var wireSpeed = lerp(45, 260, (u - 1) / 9);
+  electrons.push({
+    x: -10,
+    y: wireY,
+    vx: wireSpeed,
+    vy: 0
+  });
+}
+
+function step(dt) {
+  var u = uValue();
+  var wireSpeed = lerp(45, 260, (u - 1) / 9);
+  var driftAccel = lerp(70, 900, (u - 1) / 9);
+  var maxSpeed = lerp(150, 780, (u - 1) / 9);
+
+  var spawnInterval = lerp(950, 190, (u - 1) / 9);
+  lastSpawn += dt * 1000;
+  if (lastSpawn >= spawnInterval && electrons.length < 220) {
+    lastSpawn = 0;
+    spawnElectron();
+  }
+
+  for (var i = electrons.length - 1; i >= 0; i--) {
+    var e = electrons[i];
+    var insideBox = e.x >= boxLeft && e.x <= boxLeft + boxW;
+
+    if (insideBox) {
+      e.vx += driftAccel * dt;
+      var speed = Math.hypot(e.vx, e.vy);
+      if (speed > maxSpeed) {
+        var scale = maxSpeed / speed;
+        e.vx *= scale;
+        e.vy *= scale;
+      }
+    } else {
+      e.vx = lerp(e.vx, wireSpeed, Math.min(1, dt * 6));
+      e.vy = lerp(e.vy, 0, Math.min(1, dt * 6));
+    }
+
+    e.x += e.vx * dt;
+    e.y += e.vy * dt;
+
+    if (insideBox) {
+      var top = boxTop + electronR + 2;
+      var bottom = boxTop + boxH - electronR - 2;
+      if (e.y < top) { e.y = top; e.vy = Math.abs(e.vy); }
+      if (e.y > bottom) { e.y = bottom; e.vy = -Math.abs(e.vy); }
+
+      for (var a = 0; a < atoms.length; a++) {
+        var atom = atoms[a];
+        var dx = e.x - atom.x, dy = e.y - atom.y;
+        var dist = Math.hypot(dx, dy);
+        var minDist = atomR + electronR + 1;
+        if (dist < minDist && dist > 0.0001) {
+          var speedBefore = Math.max(Math.hypot(e.vx, e.vy), wireSpeed * 0.6);
+          var angle = Math.random() * Math.PI * 2;
+          var newSpeed = speedBefore * (0.85 + Math.random() * 0.3);
+          e.vx = Math.cos(angle) * newSpeed;
+          e.vy = Math.sin(angle) * newSpeed;
+
+          var nx = dx / dist, ny = dy / dist;
+          e.x = atom.x + nx * minDist;
+          e.y = atom.y + ny * minDist;
+
+          atom.heat = 1;
+        }
+      }
+    } else {
+      e.y = lerp(e.y, wireY, Math.min(1, dt * 8));
+    }
+
+    if (e.x > W + 20) {
+      electrons.splice(i, 1);
+    }
+  }
+
+  var decay = Math.exp(-dt / 0.35);
+  for (var k = 0; k < atoms.length; k++) {
+    atoms[k].heat *= decay;
+    if (atoms[k].heat < 0.02) atoms[k].heat = 0;
+  }
+}
+
+function roundRectPath(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function drawBoxBorder(x, y, w, h, r) {
+  var wTop = wireY - wireThickness / 2;
+  var wBottom = wireY + wireThickness / 2;
+
+  ctx.beginPath();
+  ctx.moveTo(0, wTop);
+  ctx.lineTo(x, wTop);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, wTop);
+  ctx.lineTo(W, wTop);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(0, wBottom);
+  ctx.lineTo(x, wBottom);
+  ctx.lineTo(x, y + h - r);
+  ctx.arcTo(x, y + h, x + r, y + h, r);
+  ctx.lineTo(x + w - r, y + h);
+  ctx.arcTo(x + w, y + h, x + w, y + h - r, r);
+  ctx.lineTo(x + w, wBottom);
+  ctx.lineTo(W, wBottom);
+  ctx.stroke();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = colors.surface;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = colors.surface2;
+  ctx.fillRect(0, wireY - wireThickness / 2, boxLeft, wireThickness);
+  ctx.fillRect(boxLeft + boxW, wireY - wireThickness / 2, W - (boxLeft + boxW), wireThickness);
+
+  ctx.fillStyle = colors.surface2;
+  roundRectPath(boxLeft, boxTop, boxW, boxH, 14);
+  ctx.fill();
+  ctx.strokeStyle = colors.border;
+  ctx.lineWidth = 2;
+  drawBoxBorder(boxLeft, boxTop, boxW, boxH, 14);
+
+  for (var i = 0; i < atoms.length; i++) {
+    var atom = atoms[i];
+    if (atom.heat > 0.02) {
+      ctx.beginPath();
+      var glowR = atomR + 2 + atom.heat * 2;
+      ctx.fillStyle = colors.heatSoft;
+      ctx.globalAlpha = atom.heat * 0.7;
+      ctx.arc(atom.x, atom.y, glowR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    ctx.beginPath();
+    ctx.fillStyle = lerpColor(colors.textMutedRgb, colors.heatRgb, atom.heat);
+    ctx.arc(atom.x, atom.y, atomR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = colors.border;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = colors.accent;
+  for (var j = 0; j < electrons.length; j++) {
+    var e = electrons[j];
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, electronR, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function frame(t) {
+  if (lastTime === null) lastTime = t;
+  var dt = Math.min((t - lastTime) / 1000, 0.05);
+  lastTime = t;
+
+  step(dt);
+  draw();
+
+  requestAnimationFrame(frame);
+}
+
+rSlider.addEventListener('input', function () {
+  updateReadouts();
+  regenerateAtoms();
+});
+uSlider.addEventListener('input', updateReadouts);
+
+var ro = new ResizeObserver(function () { layout(); });
+ro.observe(stage);
+
+refreshColors();
+layout();
+updateReadouts();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

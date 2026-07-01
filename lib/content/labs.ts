@@ -35,6 +35,13 @@ export const labs: Lab[] = [
   src: "/labs/diffusion/index.html",
   topicSlug: "diffusion-brownian",
 },
+{
+  slug: "resistor",
+  title: "Резистор",
+  description: "Регулируя сопротивление и напряжение мы можем заметить, что нагрев резистора увеличвается.",
+  src: "/labs/resistor/index.html",
+  topicSlug: "current-basics",
+},
 ];
 
 export function getLab(slug: string): Lab | undefined {
