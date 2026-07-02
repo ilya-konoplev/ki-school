@@ -10,7 +10,7 @@ export default async function SiteLayout({
 }) {
   const user = await getSessionUser();
   const headerUser = user
-    ? { username: user.username, isAdmin: user.isAdmin }
+    ? { username: user.username, isAdmin: user.isAdmin, role: user.role }
     : null;
 
   return (

@@ -15,7 +15,7 @@ export default async function Home() {
   const user = await getSessionUser();
   const [texts, servicesList] = await Promise.all([getTexts(), getServices()]);
   const students =
-    user && !user.isAdmin ? await getChildrenSummary(user.id) : [];
+    user?.role === "parent" ? await getChildrenSummary(user.id) : [];
 
   return (
     <>
@@ -65,8 +65,10 @@ export default async function Home() {
       <section className="pb-6 sm:pb-10">
         <Container>
           {user ? (
-            user.isAdmin ? (
+            user.role === "admin" ? (
               <AdminBlock />
+            ) : user.role === "student" ? (
+              <StudentBlock />
             ) : (
               <ParentPanel students={students} />
             )
@@ -169,6 +171,25 @@ function AdminBlock() {
       </div>
       <Button href="/admin" size="lg">
         Перейти в админку
+      </Button>
+    </div>
+  );
+}
+
+function StudentBlock() {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-border bg-surface p-7 sm:p-9">
+      <div>
+        <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
+          Ваш личный кабинет
+        </h2>
+        <p className="mt-2 text-muted">
+          Смотрите свой прогресс по темам, ближайшее занятие и комментарии
+          репетитора.
+        </p>
+      </div>
+      <Button href="/student" size="lg">
+        Открыть мой прогресс
       </Button>
     </div>
   );

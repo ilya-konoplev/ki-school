@@ -47,10 +47,35 @@ export type StudentDetails = {
   fullName: string;
   examDate: string | null;
   parent: { id: string; username: string; fullName: string | null } | null;
+  login: { username: string } | null;
   lessons: { id: string; scheduledAt: string; note: string | null }[];
   comments: { id: string; body: string; createdAt: string }[];
   progress: { subject: string; topicSlug: string; completedOn: string }[];
 };
+
+/** Логин ученика (если заведён). Устойчиво к отсутствию колонки auth_user_id. */
+async function getStudentLogin(
+  studentId: string,
+): Promise<{ username: string } | null> {
+  const supabase = await createClient();
+  try {
+    const { data } = await supabase
+      .from("students")
+      .select("auth_user_id")
+      .eq("id", studentId)
+      .maybeSingle();
+    const authId = data?.auth_user_id;
+    if (!authId) return null;
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", authId)
+      .maybeSingle();
+    return profile ? { username: profile.username } : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function getStudentDetails(
   id: string,
@@ -86,6 +111,8 @@ export async function getStudentDetails(
         .eq("student_id", id),
     ]);
 
+  const login = await getStudentLogin(id);
+
   return {
     id: student.id,
     fullName: student.full_name,
@@ -93,6 +120,7 @@ export async function getStudentDetails(
     parent: parent
       ? { id: parent.id, username: parent.username, fullName: parent.full_name }
       : null,
+    login,
     lessons: (lessons ?? []).map((l) => ({
       id: l.id,
       scheduledAt: l.scheduled_at,

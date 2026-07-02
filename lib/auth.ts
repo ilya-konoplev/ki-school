@@ -4,8 +4,8 @@ import { createClient } from "./supabase/server";
 
 /**
  * Вход по логину: Supabase Auth работает с email, поэтому логин превращается
- * в технический email вида `логин@parents.ki-school.local`. Родитель вводит
- * только логин, преобразование происходит на сервере.
+ * в технический email вида `логин@parents.ki-school.local`. Пользователь
+ * (родитель или ученик) вводит только логин, преобразование — на сервере.
  */
 export const PARENT_EMAIL_DOMAIN = "parents.ki-school.local";
 
@@ -21,12 +21,20 @@ export function isSupabaseConfigured(): boolean {
   );
 }
 
+export type Role = "admin" | "parent" | "student";
+
 export type SessionUser = {
   id: string;
   username: string;
   fullName: string | null;
   isAdmin: boolean;
+  role: Role;
 };
+
+function normalizeRole(role: unknown, isAdmin: boolean): Role {
+  if (role === "admin" || role === "parent" || role === "student") return role;
+  return isAdmin ? "admin" : "parent";
+}
 
 /** Текущий вошедший пользователь и его профиль, либо null. */
 export async function getSessionUser(): Promise<SessionUser | null> {
@@ -38,25 +46,61 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: profile } = await supabase
+  // Сначала пытаемся прочитать роль; если колонки ещё нет (миграция 0003 не
+  // применена) — читаем без неё и выводим роль из is_admin.
+  const withRole = await supabase
+    .from("profiles")
+    .select("username, full_name, is_admin, role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (withRole.data) {
+    const p = withRole.data;
+    return {
+      id: user.id,
+      username: p.username,
+      fullName: p.full_name,
+      isAdmin: p.is_admin,
+      role: normalizeRole(p.role, p.is_admin),
+    };
+  }
+
+  const { data: p2 } = await supabase
     .from("profiles")
     .select("username, full_name, is_admin")
     .eq("id", user.id)
     .maybeSingle();
-  if (!profile) return null;
+  if (!p2) return null;
 
   return {
     id: user.id,
-    username: profile.username,
-    fullName: profile.full_name,
-    isAdmin: profile.is_admin,
+    username: p2.username,
+    fullName: p2.full_name,
+    isAdmin: p2.is_admin,
+    role: p2.is_admin ? "admin" : "parent",
   };
 }
 
-/** Требует вошедшего родителя; иначе – на страницу входа. */
+/** Домашний маршрут пользователя по его роли. */
+export function homePathForRole(role: Role): string {
+  if (role === "admin") return "/admin";
+  if (role === "student") return "/student";
+  return "/cabinet";
+}
+
+/** Требует вошедшего родителя; ученика уводит в его кабинет, гостя – на вход. */
 export async function requireParent(): Promise<SessionUser> {
   const user = await getSessionUser();
   if (!user) redirect("/login");
+  if (user.role === "student") redirect("/student");
+  return user;
+}
+
+/** Требует вошедшего ученика; иначе – в его домашний раздел или на вход. */
+export async function requireStudent(): Promise<SessionUser> {
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+  if (user.role !== "student") redirect(homePathForRole(user.role));
   return user;
 }
 

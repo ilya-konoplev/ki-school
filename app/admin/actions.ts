@@ -76,6 +76,19 @@ export async function deleteParent(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (id) {
     const admin = createAdminClient();
+    // Сначала удаляем аккаунты входа привязанных учеников (если заведены).
+    try {
+      const supabase = await createClient();
+      const { data } = await supabase
+        .from("students")
+        .select("auth_user_id")
+        .eq("parent_id", id);
+      for (const row of data ?? []) {
+        if (row.auth_user_id) await admin.auth.admin.deleteUser(row.auth_user_id);
+      }
+    } catch {
+      /* колонки auth_user_id ещё нет — пропускаем */
+    }
     await admin.auth.admin.deleteUser(id);
   }
   revalidatePath("/admin/parents");
@@ -128,10 +141,130 @@ export async function deleteStudent(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (id) {
     const supabase = await createClient();
+    // Удаляем связанный аккаунт входа ученика (если есть).
+    try {
+      const { data } = await supabase
+        .from("students")
+        .select("auth_user_id")
+        .eq("id", id)
+        .maybeSingle();
+      if (data?.auth_user_id) {
+        await createAdminClient().auth.admin.deleteUser(data.auth_user_id);
+      }
+    } catch {
+      /* колонки auth_user_id ещё нет — пропускаем */
+    }
     await supabase.from("students").delete().eq("id", id);
   }
   revalidatePath("/admin/parents");
   redirect("/admin/parents");
+}
+
+// ── Аккаунт ученика (логин/пароль) ──────────────────────────────────────────
+
+export async function createStudentLogin(
+  formData: FormData,
+): Promise<AdminResult> {
+  await requireAdmin();
+  if (describeSupabaseKey(process.env.SUPABASE_SERVICE_ROLE_KEY) !== "service_role") {
+    return {
+      error:
+        "Нужен секретный service_role ключ Supabase (проверьте переменную SUPABASE_SERVICE_ROLE_KEY на Vercel).",
+    };
+  }
+  const studentId = String(formData.get("student_id") ?? "");
+  const fullName = String(formData.get("full_name") ?? "").trim();
+  const username = String(formData.get("username") ?? "")
+    .trim()
+    .toLowerCase();
+  const password = String(formData.get("password") ?? "");
+
+  if (!studentId) return { error: "Не указан ученик." };
+  if (!username || !password) return { error: "Логин и пароль обязательны." };
+  if (password.length < 6) return { error: "Пароль не короче 6 символов." };
+  if (!/^[a-z0-9_.-]+$/.test(username)) {
+    return {
+      error: "Логин: латиница, цифры, точка, дефис, подчёркивание.",
+    };
+  }
+
+  const admin = createAdminClient();
+  const { data, error } = await admin.auth.admin.createUser({
+    email: usernameToEmail(username),
+    password,
+    email_confirm: true,
+    user_metadata: {
+      username,
+      full_name: fullName || null,
+      is_admin: false,
+      role: "student",
+    },
+  });
+  if (error || !data.user) {
+    return {
+      error: error?.message.includes("already")
+        ? "Такой логин уже занят."
+        : `Не удалось создать логин: ${error?.message ?? "ошибка"}`,
+    };
+  }
+
+  const supabase = await createClient();
+  const { error: linkErr } = await supabase
+    .from("students")
+    .update({ auth_user_id: data.user.id })
+    .eq("id", studentId);
+  if (linkErr) {
+    await admin.auth.admin.deleteUser(data.user.id); // откат
+    return { error: "Не удалось привязать логин к ученику." };
+  }
+
+  revalidatePath(`/admin/students/${studentId}`);
+  return { ok: true };
+}
+
+export async function resetStudentPassword(
+  formData: FormData,
+): Promise<AdminResult> {
+  await requireAdmin();
+  if (describeSupabaseKey(process.env.SUPABASE_SERVICE_ROLE_KEY) !== "service_role") {
+    return { error: "Нужен секретный service_role ключ Supabase." };
+  }
+  const studentId = String(formData.get("student_id") ?? "");
+  const password = String(formData.get("password") ?? "");
+  if (password.length < 6) return { error: "Пароль не короче 6 символов." };
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("students")
+    .select("auth_user_id")
+    .eq("id", studentId)
+    .maybeSingle();
+  const authId = data?.auth_user_id;
+  if (!authId) return { error: "У ученика нет логина." };
+
+  const { error } = await createAdminClient().auth.admin.updateUserById(authId, {
+    password,
+  });
+  if (error) return { error: "Не удалось сменить пароль." };
+
+  revalidatePath(`/admin/students/${studentId}`);
+  return { ok: true };
+}
+
+export async function removeStudentLogin(formData: FormData) {
+  await requireAdmin();
+  const studentId = String(formData.get("student_id") ?? "");
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("students")
+    .select("auth_user_id")
+    .eq("id", studentId)
+    .maybeSingle();
+  if (data?.auth_user_id) {
+    // FK on delete set null очистит students.auth_user_id.
+    await createAdminClient().auth.admin.deleteUser(data.auth_user_id);
+  }
+  revalidatePath(`/admin/students/${studentId}`);
 }
 
 // ── Прогресс (отметка тем) ────────────────────────────────────────────────────

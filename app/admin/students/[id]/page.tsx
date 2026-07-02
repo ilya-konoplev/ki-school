@@ -4,9 +4,12 @@ import { notFound } from "next/navigation";
 import {
   addComment,
   addLesson,
+  createStudentLogin,
   deleteComment,
   deleteLesson,
   deleteStudent,
+  removeStudentLogin,
+  resetStudentPassword,
   updateStudent,
 } from "@/app/admin/actions";
 import { ActionForm } from "@/components/admin/ActionForm";
@@ -87,6 +90,93 @@ export default async function StudentPage({
             <SubmitButton>Сохранить</SubmitButton>
           </div>
         </ActionForm>
+      </section>
+
+      {/* Логин ученика */}
+      <section className="rounded-2xl border border-border bg-surface p-6">
+        <h2 className="text-lg font-semibold tracking-tight">Логин ученика</h2>
+        <p className="mt-1 text-sm text-muted">
+          Отдельный вход для ученика — после входа он видит свой прогресс. Логин
+          и пароль передайте ученику сами.
+        </p>
+
+        {details.login ? (
+          <div className="mt-4 space-y-4">
+            <p className="text-sm">
+              Логин:{" "}
+              <span className="font-mono font-medium">
+                {details.login.username}
+              </span>
+            </p>
+            <ActionForm
+              action={resetStudentPassword}
+              successText="Пароль изменён"
+              resetOnSuccess
+            >
+              <input type="hidden" name="student_id" value={details.id} />
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <label className="mb-1 block text-xs text-muted">
+                    Новый пароль
+                  </label>
+                  <input
+                    name="password"
+                    type="text"
+                    minLength={6}
+                    required
+                    placeholder="минимум 6 символов"
+                    className={inputClass}
+                  />
+                </div>
+                <SubmitButton pendingText="Меняем…">Сменить пароль</SubmitButton>
+              </div>
+            </ActionForm>
+            <form action={removeStudentLogin}>
+              <input type="hidden" name="student_id" value={details.id} />
+              <SubmitButton
+                danger
+                pendingText="Удаляем…"
+                className="rounded-lg px-3 py-2 text-sm text-danger transition-colors hover:bg-danger/10"
+              >
+                Удалить логин ученика
+              </SubmitButton>
+            </form>
+          </div>
+        ) : (
+          <ActionForm
+            action={createStudentLogin}
+            successText="Логин создан"
+            className="mt-4"
+          >
+            <input type="hidden" name="student_id" value={details.id} />
+            <input type="hidden" name="full_name" value={details.fullName} />
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <label className="mb-1 block text-xs text-muted">
+                  Логин (латиницей)
+                </label>
+                <input
+                  name="username"
+                  required
+                  placeholder="ivanova-anna"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-muted">Пароль</label>
+                <input
+                  name="password"
+                  type="text"
+                  minLength={6}
+                  required
+                  placeholder="минимум 6 символов"
+                  className={inputClass}
+                />
+              </div>
+              <SubmitButton pendingText="Создаём…">Создать логин</SubmitButton>
+            </div>
+          </ActionForm>
+        )}
       </section>
 
       {/* Занятия */}

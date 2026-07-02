@@ -1,7 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { isSupabaseConfigured, usernameToEmail } from "@/lib/auth";
+import {
+  homePathForRole,
+  isSupabaseConfigured,
+  usernameToEmail,
+  type Role,
+} from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export type LoginState = { error?: string };
@@ -33,13 +38,33 @@ export async function login(
     return { error: "Неверный логин или пароль." };
   }
 
-  const { data: profile } = await supabase
+  // Роль определяет, куда направить после входа. Колонки role может не быть
+  // (миграция 0003 не применена) — тогда ориентируемся на is_admin.
+  const withRole = await supabase
     .from("profiles")
-    .select("is_admin")
+    .select("is_admin, role")
     .eq("id", data.user.id)
     .maybeSingle();
 
-  redirect(profile?.is_admin ? "/admin" : "/cabinet");
+  let role: Role;
+  if (withRole.data) {
+    const r = withRole.data.role;
+    role =
+      r === "admin" || r === "parent" || r === "student"
+        ? r
+        : withRole.data.is_admin
+          ? "admin"
+          : "parent";
+  } else {
+    const { data: p2 } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", data.user.id)
+      .maybeSingle();
+    role = p2?.is_admin ? "admin" : "parent";
+  }
+
+  redirect(homePathForRole(role));
 }
 
 export async function logout() {

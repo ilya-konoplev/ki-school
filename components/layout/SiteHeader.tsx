@@ -10,7 +10,11 @@ import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { nav, site } from "@/lib/content/site";
 
-export type HeaderUser = { username: string; isAdmin: boolean } | null;
+export type HeaderUser = {
+  username: string;
+  isAdmin: boolean;
+  role: "admin" | "parent" | "student";
+} | null;
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -24,8 +28,13 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
   // Закрывать мобильное меню при смене страницы.
   useEffect(() => setOpen(false), [pathname]);
 
-  const dashboardHref = user?.isAdmin ? "/admin" : "/cabinet";
-  const dashboardLabel = user?.isAdmin ? "Админка" : "Кабинет";
+  const dashboardHref =
+    user?.role === "admin"
+      ? "/admin"
+      : user?.role === "student"
+        ? "/student"
+        : "/cabinet";
+  const dashboardLabel = user?.role === "admin" ? "Админка" : "Кабинет";
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
